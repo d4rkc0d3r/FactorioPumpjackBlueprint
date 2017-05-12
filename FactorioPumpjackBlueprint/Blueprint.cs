@@ -40,7 +40,7 @@ namespace FactorioPumpjackBlueprint
                     }
                 }
             }
-            catch (FormatException fe)
+            catch (FormatException)
             {
                 return null;
             }
