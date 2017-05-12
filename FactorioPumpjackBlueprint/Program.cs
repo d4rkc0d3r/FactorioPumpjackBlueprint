@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Ionic.Zlib;
 
 namespace FactorioPumpjackBlueprint
@@ -33,15 +34,25 @@ namespace FactorioPumpjackBlueprint
                 Console.WriteLine(fe.ToString());
                 Console.ReadKey();
             }
+            blueprintJSON = blueprintJSON.Substring(13, blueprintJSON.Length - 14);
+            Blueprint bp = JsonConvert.DeserializeObject<Blueprint>(blueprintJSON);
 
-            dynamic bp = JsonConvert.DeserializeObject(blueprintJSON);
+            double minx = bp.Entities.Select((e)=>e.Position.X).Min();
+            double miny = bp.Entities.Select((e)=>e.Position.Y).Min();
 
-            foreach (var entity in bp.blueprint.entities)
+            foreach(var entity in bp.Entities)
             {
-                entity.position.x += 10;
+                entity.Position.X -= minx;
+                entity.Position.Y -= miny;
             }
 
-            string newbpString = "0" + Convert.ToBase64String(Zip(JsonConvert.SerializeObject(bp, Formatting.None)));
+            //bp.Entities.Clear();
+            string bpStringOut = @"{""blueprint"":" + JsonConvert.SerializeObject(bp, Formatting.None) + "}";
+            Clipboard.SetText(JsonConvert.SerializeObject(bp, Formatting.Indented));
+
+            Console.ReadKey();
+
+            string newbpString = "0" + Convert.ToBase64String(Zip(@"{""blueprint"":" + JsonConvert.SerializeObject(bp, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }) + "}"));
 
             Clipboard.SetText(newbpString);
         }

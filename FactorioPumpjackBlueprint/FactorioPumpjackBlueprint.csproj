@@ -46,8 +46,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Blueprint.cs" />
+    <Compile Include="Entity.cs" />
+    <Compile Include="Icon.cs" />
+    <Compile Include="Item.cs" />
+    <Compile Include="Position.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Signal.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
