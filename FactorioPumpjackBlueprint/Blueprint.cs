@@ -23,6 +23,19 @@ namespace FactorioPumpjackBlueprint
         [JsonProperty("version")]
         public double Version { get; set; }
 
+        public void NormalizePositions()
+        {
+            double minx = Entities.Select(e => e.Position.X).Min();
+            double miny = Entities.Select(e => e.Position.Y).Min();
+            double maxx = Entities.Select(e => e.Position.X).Max();
+            double maxy = Entities.Select(e => e.Position.Y).Max();
+
+            foreach (var entity in Entities)
+            {
+                entity.Position.Sub(minx, miny).Sub(maxx / 2, maxy / 2);
+            }
+        }
+
         public static Blueprint ImportBlueprintString(string bpString)
         {
             string blueprintJSON = null;
