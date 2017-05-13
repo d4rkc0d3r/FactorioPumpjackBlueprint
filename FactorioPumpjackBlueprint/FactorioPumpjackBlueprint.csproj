@@ -83,6 +83,7 @@
   <ItemGroup>
     <Compile Include="Blueprint.cs" />
     <Compile Include="Coord.cs" />
+    <Compile Include="Edge.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="Icon.cs" />
     <Compile Include="Item.cs" />

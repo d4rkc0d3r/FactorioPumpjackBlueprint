@@ -136,10 +136,42 @@ namespace FactorioPumpjackBlueprint
             }
 
             var newPipeSet = new HashSet<Coord>();
-            for (int i = 0; i < pipes.Count - 1; i++)
+            var allPipeIds = pipes.Select(p => p.EntityNumber).ToList();
+            var allEdges = new List<Edge>();
+            var mstEdges = new HashSet<Edge>();
+            var mstIds = new HashSet<int>();
+            for (int i = 0; i < pipes.Count; i++)
             {
-                Entity pipe1 = pipes[i];
-                Entity pipe2 = pipes[i + 1];
+                var p = pipes[i];
+                var d = distanceMap[p.EntityNumber];
+                for (int j = 0; j < pipes.Count; j++)
+                {
+                    if (i == j)
+                        continue;
+                    var c = new Coord(pipes[j].Position);
+                    var distance = d[c.X, c.Y];
+                    if (distance == -1)
+                        continue;
+                    allEdges.Add(new Edge() { Start = p.EntityNumber, End = pipes[j].EntityNumber, Distance = distance });
+                }
+            }
+            allEdges = allEdges.OrderBy(e => e.Distance).ToList();
+            Edge edge = allEdges.First();
+            mstIds.Add(edge.Start);
+            mstIds.Add(edge.End);
+            mstEdges.Add(edge);
+            while (mstIds.Count < allPipeIds.Count)
+            {
+                edge = allEdges.First(e => (!mstIds.Contains(e.Start) && mstIds.Contains(e.End)) || (mstIds.Contains(e.Start) && !mstIds.Contains(e.End)));
+                mstIds.Add(edge.Start);
+                mstIds.Add(edge.End);
+                mstEdges.Add(edge);
+            }
+            var idToPipeMap = pipes.ToDictionary(p => p.EntityNumber);
+            foreach (var mstEdge in mstEdges)
+            {
+                Entity pipe1 = idToPipeMap[mstEdge.Start];
+                Entity pipe2 = idToPipeMap[mstEdge.End];
                 Coord start = new Coord(pipe1.Position);
                 Coord end = new Coord(pipe2.Position);
                 var distanceField = distanceMap[pipe1.EntityNumber];
@@ -170,6 +202,11 @@ namespace FactorioPumpjackBlueprint
                     newPipeSet.Add(c);
                 }
             }
+            foreach (var pipe in pipes)
+            {
+                newPipeSet.Remove(new Coord(pipe.Position));
+            }
+            foreach (var p in newPipeSet)
             {
                 bp.Entities.Add(new Entity("pipe", p.X, p.Y));
             }
