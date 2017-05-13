@@ -50,7 +50,7 @@ namespace FactorioPumpjackBlueprint
 
         public override bool Equals(object obj)
         {
-            return obj is Coord && Equals(obj as Coord);
+            return Equals(obj as Coord);
         }
 
         public override int GetHashCode()
