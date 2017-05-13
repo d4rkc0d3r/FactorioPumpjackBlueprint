@@ -222,9 +222,32 @@ namespace FactorioPumpjackBlueprint
                 return;
             }
 
-            bp = LayPipes(bp);
+            int iterationsWithoutImprovement = 0;
+            Blueprint bestBp = LayPipes(bp);
+            int bestPipeCount = bestBp.Entities.Count(e => "pipe".Equals(e.Name));
+            var pumpjackIdMap = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).ToDictionary(e => e.EntityNumber);
+            var pumpjackIds = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).Select(p => p.EntityNumber).ToList();
+            Random rng = new Random();
+
+            while(++iterationsWithoutImprovement <= 10000)
+            {
+                int randomizeAmount = rng.Next(4);
+                for (int i = 0; i <= randomizeAmount; i++)
+                {
+                    pumpjackIdMap[pumpjackIds[rng.Next(pumpjackIds.Count)]].Direction = rng.Next(4) * 2;
+                }
+                var test = LayPipes(bp);
+                int testPipeCount = test.Entities.Count(e => "pipe".Equals(e.Name));
+
+                if (testPipeCount < bestPipeCount)
+                {
+                    bestPipeCount = testPipeCount;
+                    bestBp = test;
+                    iterationsWithoutImprovement = 0;
+                }
+            }
             
-            Clipboard.SetText(bp.ExportBlueprintString());
+            Clipboard.SetText(bestBp.ExportBlueprintString());
         }
     }
 }
