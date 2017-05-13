@@ -135,6 +135,7 @@ namespace FactorioPumpjackBlueprint
                 distanceMap.Add(pipe.EntityNumber, distanceField);
             }
 
+            var newPipeSet = new HashSet<Coord>();
             for (int i = 0; i < pipes.Count - 1; i++)
             {
                 Entity pipe1 = pipes[i];
@@ -166,12 +167,11 @@ namespace FactorioPumpjackBlueprint
                         break;
                     }
                     c = next;
-                    toAdd.Add(new Entity("pipe", c.X, c.Y));
+                    newPipeSet.Add(c);
                 }
             }
-            foreach (var e in toAdd)
             {
-                bp.Entities.Add(e);
+                bp.Entities.Add(new Entity("pipe", p.X, p.Y));
             }
 
             bp.NormalizePositions();
