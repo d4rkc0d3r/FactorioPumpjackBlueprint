@@ -9,16 +9,10 @@ namespace FactorioPumpjackBlueprint
 {
     class Program
     {
-        [STAThreadAttribute]
-        static void Main(string[] args)
+        static Blueprint LayPipes(Blueprint bp)
         {
-            Blueprint bp = Blueprint.ImportBlueprintString(Clipboard.GetText());
-
-            if (bp == null)
-            {
-                Console.WriteLine("Could not load blueprint");
-                return;
-            }
+            // Yes, this is a lazy copy
+            bp = Blueprint.ImportBlueprintString(bp.ExportBlueprintString());
 
             double minx = bp.Entities.Select(e => e.Position.X).Min();
             double miny = bp.Entities.Select(e => e.Position.Y).Min();
@@ -71,7 +65,7 @@ namespace FactorioPumpjackBlueprint
                         case 6: p.Add(-2, 1); break;
                         default: p = null; break;
                     }
-                    if(p == null || occupant[(int)p.X, (int)p.Y] == null)
+                    if (p == null || occupant[(int)p.X, (int)p.Y] == null)
                     {
                         break;
                     }
@@ -98,7 +92,6 @@ namespace FactorioPumpjackBlueprint
             };
             foreach (Entity pipe in pipes)
             {
-                Console.WriteLine("Calculate distance field for entity number " + pipe.EntityNumber);
                 int[,] distanceField = new int[width, height];
                 for (int x = 0; x < width; x++)
                 {
@@ -109,7 +102,7 @@ namespace FactorioPumpjackBlueprint
                 }
                 Queue<Coord> openQueue = new Queue<Coord>();
                 openQueue.Enqueue(new Coord(pipe.Position));
-                while(openQueue.Count > 0)
+                while (openQueue.Count > 0)
                 {
                     Coord c = openQueue.Dequeue();
                     if (c.X < 0 || c.Y < 0 || c.X >= width || c.Y >= height || occupant[c.X, c.Y] != null || distanceField[c.X, c.Y] != -1)
@@ -212,6 +205,25 @@ namespace FactorioPumpjackBlueprint
             }
 
             bp.NormalizePositions();
+
+            Console.WriteLine("Found pipe layout with " + bp.Entities.Count(e => "pipe".Equals(e.Name)) + " pipes.");
+
+            return bp;
+        }
+
+        [STAThreadAttribute]
+        static void Main(string[] args)
+        {
+            Blueprint bp = Blueprint.ImportBlueprintString(Clipboard.GetText());
+
+            if (bp == null)
+            {
+                Console.WriteLine("Could not load blueprint");
+                return;
+            }
+
+            bp = LayPipes(bp);
+            
             Clipboard.SetText(bp.ExportBlueprintString());
         }
     }
