@@ -206,48 +206,52 @@ namespace FactorioPumpjackBlueprint
 
             bp.NormalizePositions();
 
-            Console.WriteLine("Found pipe layout with " + bp.Entities.Count(e => "pipe".Equals(e.Name)) + " pipes.");
-
             return bp;
         }
 
         [STAThreadAttribute]
         static void Main(string[] args)
         {
-            Blueprint bp = Blueprint.ImportBlueprintString(Clipboard.GetText());
+            Blueprint originalBp = Blueprint.ImportBlueprintString(Clipboard.GetText());
 
-            if (bp == null)
+            if (originalBp == null)
             {
                 Console.WriteLine("Could not load blueprint");
                 return;
             }
 
             int iterationsWithoutImprovement = 0;
-            Blueprint bestBp = LayPipes(bp);
-            int bestPipeCount = bestBp.Entities.Count(e => "pipe".Equals(e.Name));
-            var pumpjackIdMap = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).ToDictionary(e => e.EntityNumber);
-            var pumpjackIds = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).Select(p => p.EntityNumber).ToList();
+            Blueprint bestBp = Blueprint.ImportBlueprintString(originalBp.ExportBlueprintString());
+            Blueprint bestFinishedBp = LayPipes(originalBp);
+            int bestPipeCount = bestFinishedBp.Entities.Count(e => "pipe".Equals(e.Name));
             Random rng = new Random();
 
-            while(++iterationsWithoutImprovement <= 10000)
+            while(++iterationsWithoutImprovement <= 1000)
             {
-                int randomizeAmount = rng.Next(4);
+                Blueprint bp = Blueprint.ImportBlueprintString(bestBp.ExportBlueprintString());
+                var pumpjackIdMap = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).ToDictionary(e => e.EntityNumber);
+                var pumpjackIds = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).Select(p => p.EntityNumber).ToList();
+                int randomizeAmount = rng.Next(5);
                 for (int i = 0; i <= randomizeAmount; i++)
                 {
-                    pumpjackIdMap[pumpjackIds[rng.Next(pumpjackIds.Count)]].Direction = rng.Next(4) * 2;
+                    int id = rng.Next(pumpjackIds.Count);
+                    int direction = rng.Next(4) * 2;
+                    pumpjackIdMap[pumpjackIds[id]].Direction = direction;
                 }
                 var test = LayPipes(bp);
                 int testPipeCount = test.Entities.Count(e => "pipe".Equals(e.Name));
 
                 if (testPipeCount < bestPipeCount)
                 {
+                    Console.WriteLine("Found layout with " + testPipeCount + " pipes after " + iterationsWithoutImprovement + " iterations.");
                     bestPipeCount = testPipeCount;
-                    bestBp = test;
+                    bestBp = bp;
+                    bestFinishedBp = test;
                     iterationsWithoutImprovement = 0;
                 }
             }
             
-            Clipboard.SetText(bestBp.ExportBlueprintString());
+            Clipboard.SetText(bestFinishedBp.ExportBlueprintString());
         }
     }
 }
