@@ -204,6 +204,8 @@ namespace FactorioPumpjackBlueprint
                 bp.Entities.Add(new Entity("pipe", p.X, p.Y));
             }
 
+            bp.extraData = new { PipeCount = bp.Entities.Count(e => "pipe".Equals(e.Name))};
+
             bp.NormalizePositions();
 
             return bp;
@@ -226,7 +228,7 @@ namespace FactorioPumpjackBlueprint
             int bestPipeCount = bestFinishedBp.Entities.Count(e => "pipe".Equals(e.Name));
             Random rng = new Random();
 
-            while(++iterationsWithoutImprovement <= 1000)
+            while(++iterationsWithoutImprovement <= 250)
             {
                 Blueprint bp = Blueprint.ImportBlueprintString(bestBp.ExportBlueprintString());
                 var pumpjackIdMap = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).ToDictionary(e => e.EntityNumber);
@@ -239,7 +241,7 @@ namespace FactorioPumpjackBlueprint
                     pumpjackIdMap[pumpjackIds[id]].Direction = direction;
                 }
                 var test = LayPipes(bp);
-                int testPipeCount = test.Entities.Count(e => "pipe".Equals(e.Name));
+                int testPipeCount = test.extraData.PipeCount;
 
                 if (testPipeCount < bestPipeCount)
                 {

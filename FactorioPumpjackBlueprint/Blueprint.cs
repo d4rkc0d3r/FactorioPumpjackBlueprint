@@ -26,6 +26,8 @@ namespace FactorioPumpjackBlueprint
         [JsonProperty("label")]
         public string Name { get; set; }
 
+        public dynamic extraData;
+
         public void NormalizePositions()
         {
             double minx = Entities.Select(e => e.Position.X).Min();
