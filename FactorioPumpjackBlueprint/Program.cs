@@ -245,7 +245,7 @@ namespace FactorioPumpjackBlueprint
                 for (int y = miny; y <= maxy; y++)
                 {
                     int yend = y;
-                    while (pipesToReplace.Contains(new Coord(x, yend)) && !allPipes.Contains(new Coord(x - 1, yend)) && !allPipes.Contains(new Coord(x + 1, yend)))
+                    while (yend - y < 11 && pipesToReplace.Contains(new Coord(x, yend)) && !allPipes.Contains(new Coord(x - 1, yend)) && !allPipes.Contains(new Coord(x + 1, yend)))
                     {
                         yend++;
                     }
@@ -255,7 +255,7 @@ namespace FactorioPumpjackBlueprint
                         undergroundPipes.Add(new Entity("pipe-to-ground", x, y, 0));
                         undergroundPipes.Add(new Entity("pipe-to-ground", x, yend, 4));
                         ugPipesEndPointsY.Add(new Coord(x, yend));
-                        y = yend + 1;
+                        y = yend;
                     }
                 }
             }
@@ -265,7 +265,7 @@ namespace FactorioPumpjackBlueprint
                 for (int x = minx; x <= maxx; x++)
                 {
                     int xend = x;
-                    while (pipesToReplace.Contains(new Coord(xend, y)) && !allPipes.Contains(new Coord(xend, y - 1)) && !allPipes.Contains(new Coord(xend, y + 1)))
+                    while (xend - x < 11 && pipesToReplace.Contains(new Coord(xend, y)) && !allPipes.Contains(new Coord(xend, y - 1)) && !allPipes.Contains(new Coord(xend, y + 1)))
                     {
                         xend++;
                     }
@@ -275,7 +275,7 @@ namespace FactorioPumpjackBlueprint
                         undergroundPipes.Add(new Entity("pipe-to-ground", x, y, 6));
                         undergroundPipes.Add(new Entity("pipe-to-ground", xend, y, 2));
                         ugPipesEndPointsX.Add(new Coord(xend, y));
-                        x = xend + 1;
+                        x = xend;
                     }
                 }
             }
