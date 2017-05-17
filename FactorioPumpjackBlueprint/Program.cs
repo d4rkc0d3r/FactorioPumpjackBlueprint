@@ -195,20 +195,116 @@ namespace FactorioPumpjackBlueprint
                     newPipeSet.Add(c);
                 }
             }
+
             foreach (var pipe in pipes)
             {
                 newPipeSet.Remove(new Coord(pipe.Position));
             }
+
+            var allPipes = new HashSet<Coord>();
+            allPipes.UnionWith(pipes.Select(e => new Coord(e.Position)));
+            allPipes.UnionWith(newPipeSet);
+            
+            var ugPipes = ReplaceStraightPipeWithUnderground(newPipeSet, 1, allPipes);
+
+            foreach (var ugPipe in ugPipes)
+            {
+                bp.Entities.Add(ugPipe);
+            }
+
             foreach (var p in newPipeSet)
             {
                 bp.Entities.Add(new Entity("pipe", p.X, p.Y));
             }
 
-            bp.extraData = new { PipeCount = bp.Entities.Count(e => "pipe".Equals(e.Name))};
+            bp.extraData = new { PipeCount = bp.Entities.Count(e => e.Name.Contains("pipe")) };
 
             bp.NormalizePositions();
 
             return bp;
+        }
+
+        static HashSet<Entity> ReplaceStraightPipeWithUnderground(HashSet<Coord> pipesToReplace, int minGapToReplace = 1, HashSet<Coord> allPipes = null)
+        {
+            if (allPipes == null)
+            {
+                allPipes = pipesToReplace;
+            }
+
+            var undergroundPipes = new HashSet<Entity>();
+            var ugPipesEndPointsY = new HashSet<Coord>();
+            var ugPipesEndPointsX = new HashSet<Coord>();
+
+            int minx = allPipes.Select(c => c.X).Min();
+            int miny = allPipes.Select(c => c.Y).Min();
+            int maxx = allPipes.Select(c => c.X).Max();
+            int maxy = allPipes.Select(c => c.Y).Max();
+
+            for (int x = minx; x <= maxx; x++)
+            {
+                for (int y = miny; y <= maxy; y++)
+                {
+                    int yend = y;
+                    while (pipesToReplace.Contains(new Coord(x, yend)) && !allPipes.Contains(new Coord(x - 1, yend)) && !allPipes.Contains(new Coord(x + 1, yend)))
+                    {
+                        yend++;
+                    }
+                    yend--;
+                    if(yend - y > minGapToReplace)
+                    {
+                        undergroundPipes.Add(new Entity("pipe-to-ground", x, y, 0));
+                        undergroundPipes.Add(new Entity("pipe-to-ground", x, yend, 4));
+                        ugPipesEndPointsY.Add(new Coord(x, yend));
+                        y = yend + 1;
+                    }
+                }
+            }
+
+            for (int y = miny; y <= maxy; y++)
+            {
+                for (int x = minx; x <= maxx; x++)
+                {
+                    int xend = x;
+                    while (pipesToReplace.Contains(new Coord(xend, y)) && !allPipes.Contains(new Coord(xend, y - 1)) && !allPipes.Contains(new Coord(xend, y + 1)))
+                    {
+                        xend++;
+                    }
+                    xend--;
+                    if (xend - x > minGapToReplace)
+                    {
+                        undergroundPipes.Add(new Entity("pipe-to-ground", x, y, 6));
+                        undergroundPipes.Add(new Entity("pipe-to-ground", xend, y, 2));
+                        ugPipesEndPointsX.Add(new Coord(xend, y));
+                        x = xend + 1;
+                    }
+                }
+            }
+
+            foreach(Entity ugPipe in undergroundPipes)
+            {
+                if(ugPipe.Direction == 0)
+                {
+                    int x = (int)ugPipe.Position.X;
+                    int y = (int)ugPipe.Position.Y;
+                    for(; y <= maxy && !ugPipesEndPointsY.Contains(new Coord(x, y)); y++)
+                    {
+                        pipesToReplace.Remove(new Coord(x, y));
+                    }
+                    pipesToReplace.Remove(new Coord(x, y));
+                }
+                else if(ugPipe.Direction == 6)
+                {
+                    int x = (int)ugPipe.Position.X;
+                    int y = (int)ugPipe.Position.Y;
+                    for (; x <= maxx && !ugPipesEndPointsX.Contains(new Coord(x, y)); x++)
+                    {
+                        pipesToReplace.Remove(new Coord(x, y));
+                    }
+                    pipesToReplace.Remove(new Coord(x, y));
+                }
+            }
+
+            return undergroundPipes;
         }
 
         [STAThreadAttribute]
@@ -225,7 +321,8 @@ namespace FactorioPumpjackBlueprint
             int iterationsWithoutImprovement = 0;
             Blueprint bestBp = Blueprint.ImportBlueprintString(originalBp.ExportBlueprintString());
             Blueprint bestFinishedBp = LayPipes(originalBp);
-            int bestPipeCount = bestFinishedBp.Entities.Count(e => "pipe".Equals(e.Name));
+            int bestPipeCount = bestFinishedBp.extraData.PipeCount;
+            Console.WriteLine("Found layout with " + bestPipeCount + " pipes after " + iterationsWithoutImprovement + " iterations.");
             Random rng = new Random();
 
             while(++iterationsWithoutImprovement <= 250)
