@@ -230,7 +230,7 @@ namespace FactorioPumpjackBlueprint
 
             if (minPumpjacksPerBeacon > 0)
             {
-                int beaconRange = 5; // from beacon center to pumpjack center
+                const int BEACON_RANGE_RADIUS = 5; // from beacon center to pumpjack center
                 Coord[] beaconBBOffsets = new Coord[] {
                     new Coord(-1, -1),
                     new Coord(-1, 0),
@@ -257,9 +257,9 @@ namespace FactorioPumpjackBlueprint
                         {
                             continue;
                         }
-                        for (int y2 = -beaconRange; y2 <= beaconRange; y2++)
+                        for (int y2 = -BEACON_RANGE_RADIUS; y2 <= BEACON_RANGE_RADIUS; y2++)
                         {
-                            for (int x2 = -beaconRange; x2 <= beaconRange; x2++)
+                            for (int x2 = -BEACON_RANGE_RADIUS; x2 <= BEACON_RANGE_RADIUS; x2++)
                             {
                                 if (pumpjackCoordMap.ContainsKey(new Coord(x + x2, y + y2)))
                                 {
@@ -303,11 +303,63 @@ namespace FactorioPumpjackBlueprint
                 }
             }
 
+            {
+                var unpoweredEntityMap = bp.Entities.Where(e => e.Name.Equals("pumpjack") || e.Name.Equals("beacon")).ToDictionary(e => new Coord(e.Position));
+                while (unpoweredEntityMap.Count > 0)
+                {
+                    // actual value would be 4 but usually results in multiple disconnected power grids
+                    // thus a value of 2 is chosen so that the algorithm spams power poles to avoid said problem
+                    const int POWER_POLE_REACH_RADIUS = 2;
+                    int highestPowerCount = 0;
+                    Coord bestPosition = new Coord(0, 0);
+                    IList<Coord> bestPoweredEntities = new List<Coord>();
+                    for (int y = 0; y < height; y++)
+                    {
+                        for (int x = 0; x < width; x++)
+                        {
+                            if (occupant[x, y] != null)
+                            {
+                                continue;
+                            }
+                            IList<Coord> poweredEntities = new List<Coord>();
+                            int sum = 0;
+                            for (int y2 = -POWER_POLE_REACH_RADIUS; y2 <= POWER_POLE_REACH_RADIUS; y2++)
+                            {
+                                for (int x2 = -POWER_POLE_REACH_RADIUS; x2 <= POWER_POLE_REACH_RADIUS; x2++)
+                                {
+                                    Coord c = new Coord(x + x2, y + y2);
+                                    if (unpoweredEntityMap.ContainsKey(c))
+                                    {
+                                        sum++;
+                                        poweredEntities.Add(c);
+                                    }
+                                }
+                            }
+                            if (sum > highestPowerCount)
+                            {
+                                bestPosition = new Coord(x, y);
+                                highestPowerCount = sum;
+                                bestPoweredEntities = poweredEntities;
+                            }
+                        }
+                    }
+                    if (highestPowerCount == 0)
+                    {
+                        break;
+                    }
+                    Entity powerPole = new Entity("medium-electric-pole", bestPosition.X, bestPosition.Y);
+                    bp.Entities.Add(powerPole);
+                    occupant[bestPosition.X, bestPosition.Y] = powerPole;
+                    foreach (Coord c in bestPoweredEntities)
+                    {
+                        unpoweredEntityMap.Remove(c);
+                    }
+                }
+            }
+
             bp.extraData = new { PipeCount = pipeCount, Fitness = oilFlow * 100 - pipeCount, OilProduction = oilFlow };
-
-            bp.NormalizePositions();
-
             bp.Name = bp.Entities.Count(e => e.Name.Equals("pumpjack")) + " pumpjack outpost | " + oilFlow + " oil flow";
+            bp.NormalizePositions();
 
             return bp;
         }
