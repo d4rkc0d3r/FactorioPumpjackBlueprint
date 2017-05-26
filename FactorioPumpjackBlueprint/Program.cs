@@ -322,8 +322,8 @@ namespace FactorioPumpjackBlueprint
             }
 
             var undergroundPipes = new HashSet<Entity>();
-            var ugPipesEndPointsY = new HashSet<Coord>();
-            var ugPipesEndPointsX = new HashSet<Coord>();
+            var ugPipeEndPointsY = new HashSet<Coord>();
+            var ugPipeEndPointsX = new HashSet<Coord>();
 
             int minx = allPipes.Select(c => c.X).Min();
             int miny = allPipes.Select(c => c.Y).Min();
@@ -347,7 +347,7 @@ namespace FactorioPumpjackBlueprint
                     {
                         undergroundPipes.Add(new Entity("pipe-to-ground", x, y, Direction.North));
                         undergroundPipes.Add(new Entity("pipe-to-ground", x, yend, Direction.South));
-                        ugPipesEndPointsY.Add(new Coord(x, yend));
+                        ugPipeEndPointsY.Add(new Coord(x, yend));
                         y = yend;
                     }
                 }
@@ -370,7 +370,7 @@ namespace FactorioPumpjackBlueprint
                     {
                         undergroundPipes.Add(new Entity("pipe-to-ground", x, y, Direction.West));
                         undergroundPipes.Add(new Entity("pipe-to-ground", xend, y, Direction.East));
-                        ugPipesEndPointsX.Add(new Coord(xend, y));
+                        ugPipeEndPointsX.Add(new Coord(xend, y));
                         x = xend;
                     }
                 }
@@ -382,7 +382,7 @@ namespace FactorioPumpjackBlueprint
                 {
                     int x = (int)ugPipe.Position.X;
                     int y = (int)ugPipe.Position.Y;
-                    for(; y <= maxy && !ugPipesEndPointsY.Contains(new Coord(x, y)); y++)
+                    for(; y <= maxy && !ugPipeEndPointsY.Contains(new Coord(x, y)); y++)
                     {
                         pipesToReplace.Remove(new Coord(x, y));
                     }
@@ -392,7 +392,7 @@ namespace FactorioPumpjackBlueprint
                 {
                     int x = (int)ugPipe.Position.X;
                     int y = (int)ugPipe.Position.Y;
-                    for (; x <= maxx && !ugPipesEndPointsX.Contains(new Coord(x, y)); x++)
+                    for (; x <= maxx && !ugPipeEndPointsX.Contains(new Coord(x, y)); x++)
                     {
                         pipesToReplace.Remove(new Coord(x, y));
                     }
