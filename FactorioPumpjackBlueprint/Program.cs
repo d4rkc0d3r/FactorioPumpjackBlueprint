@@ -289,6 +289,8 @@ namespace FactorioPumpjackBlueprint
                                 {
                                     for (int x2 = -2; x2 <= 2; x2++)
                                     {
+                                        if (x + x2 < 0 || y + y2 < 0 || x + x2 >= width || y + y2 >= height)
+                                            continue;
                                         affectedPumpjacks[x + x2, y + y2] = 0;
                                     }
                                 }
