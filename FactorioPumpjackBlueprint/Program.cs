@@ -293,6 +293,10 @@ namespace FactorioPumpjackBlueprint
                                         affectedPumpjacks[x + x2, y + y2] = 0;
                                     }
                                 }
+                                foreach (var o in beaconBBOffsets)
+                                {
+                                    occupant[x + o.X, y + o.Y] = bp.Entities[bp.Entities.Count - 1];
+                                }
                                 x += 2;
                             }
                         }
