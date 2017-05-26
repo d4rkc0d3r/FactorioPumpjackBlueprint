@@ -9,7 +9,7 @@ namespace FactorioPumpjackBlueprint
 {
     class Program
     {
-        static Blueprint LayPipes(Blueprint bp)
+        static Blueprint LayPipes(Blueprint bp, bool useSpeed3, bool placeBeacons)
         {
             // Yes, this is a lazy copy
             bp = Blueprint.ImportBlueprintString(bp.ExportBlueprintString());
@@ -217,8 +217,19 @@ namespace FactorioPumpjackBlueprint
                 bp.Entities.Add(new Entity("pipe", p.X, p.Y));
             }
 
-            var pipeCount = bp.Entities.Count(e => e.Name.Contains("pipe"));
-            bp.extraData = new { PipeCount = pipeCount, Fitness = -pipeCount };
+            if(useSpeed3)
+            {
+                foreach(var pumpjack in bp.Entities.Where(e => e.Name.Equals("pumpjack")))
+                {
+                    pumpjack.Items = new List<Item>() { new Item() { Name = "speed-module-3", Count = 2 } };
+                }
+            }
+
+            double oilFlow = bp.Entities.Select(e => e.Name.Equals("pumpjack") ? (useSpeed3 ? 2 : 1) : 0).Sum();
+            int pipeCount = bp.Entities.Count(e => e.Name.Contains("pipe"));
+            bp.extraData = new { PipeCount = pipeCount, Fitness = -pipeCount, OilProduction = oilFlow };
+
+
 
             bp.NormalizePositions();
 
@@ -327,10 +338,13 @@ namespace FactorioPumpjackBlueprint
                 return;
             }
 
+            bool useSpeed3 = true;
+            bool useBeacons = false;
+
             int iterationsWithoutImprovement = 0;
             Blueprint bestBp = Blueprint.ImportBlueprintString(originalBp.ExportBlueprintString());
-            Blueprint bestFinishedBp = LayPipes(originalBp);
-            int bestFitness = bestFinishedBp.extraData.Fitness;
+            Blueprint bestFinishedBp = LayPipes(originalBp, useSpeed3, useBeacons);
+            double bestFitness = bestFinishedBp.extraData.Fitness;
             Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes after " + iterationsWithoutImprovement + " iterations.");
             Random rng = new Random();
 
@@ -346,8 +360,8 @@ namespace FactorioPumpjackBlueprint
                     int direction = rng.Next(4) * 2;
                     pumpjackIdMap[pumpjackIds[id]].Direction = direction;
                 }
-                var test = LayPipes(bp);
-                int testFitness = test.extraData.Fitness;
+                var test = LayPipes(bp, useSpeed3, useBeacons);
+                double testFitness = test.extraData.Fitness;
 
                 if (testFitness > bestFitness)
                 {
