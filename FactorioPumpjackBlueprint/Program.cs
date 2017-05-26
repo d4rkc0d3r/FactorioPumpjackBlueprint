@@ -227,6 +227,8 @@ namespace FactorioPumpjackBlueprint
 
         static HashSet<Entity> ReplaceStraightPipeWithUnderground(HashSet<Coord> pipesToReplace, int minGapToReplace = 1, HashSet<Coord> allPipes = null)
         {
+            const int MAX_UNDERGROUND_PIPE_DISTANCE = 11;
+
             if (allPipes == null)
             {
                 allPipes = pipesToReplace;
@@ -246,7 +248,10 @@ namespace FactorioPumpjackBlueprint
                 for (int y = miny; y <= maxy; y++)
                 {
                     int yend = y;
-                    while (yend - y < 11 && pipesToReplace.Contains(new Coord(x, yend)) && !allPipes.Contains(new Coord(x - 1, yend)) && !allPipes.Contains(new Coord(x + 1, yend)))
+                    while (yend - y < MAX_UNDERGROUND_PIPE_DISTANCE &&
+                        pipesToReplace.Contains(new Coord(x, yend)) &&
+                        !allPipes.Contains(new Coord(x - 1, yend)) &&
+                        !allPipes.Contains(new Coord(x + 1, yend)))
                     {
                         yend++;
                     }
@@ -266,7 +271,10 @@ namespace FactorioPumpjackBlueprint
                 for (int x = minx; x <= maxx; x++)
                 {
                     int xend = x;
-                    while (xend - x < 11 && pipesToReplace.Contains(new Coord(xend, y)) && !allPipes.Contains(new Coord(xend, y - 1)) && !allPipes.Contains(new Coord(xend, y + 1)))
+                    while (xend - x < MAX_UNDERGROUND_PIPE_DISTANCE &&
+                        pipesToReplace.Contains(new Coord(xend, y)) &&
+                        !allPipes.Contains(new Coord(xend, y - 1)) &&
+                        !allPipes.Contains(new Coord(xend, y + 1)))
                     {
                         xend++;
                     }
