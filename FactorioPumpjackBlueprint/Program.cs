@@ -59,10 +59,10 @@ namespace FactorioPumpjackBlueprint
                     p = new Position(entity.Position);
                     switch (entity.Direction)
                     {
-                        case 0: p.Add(1, -2); break;
-                        case 2: p.Add(2, -1); break;
-                        case 4: p.Add(-1, 2); break;
-                        case 6: p.Add(-2, 1); break;
+                        case Direction.North: p.Add(1, -2); break;
+                        case Direction.East: p.Add(2, -1); break;
+                        case Direction.South: p.Add(-1, 2); break;
+                        case Direction.West: p.Add(-2, 1); break;
                         default: p = null; break;
                     }
                     if (p == null || occupant[(int)p.X, (int)p.Y] == null)
@@ -258,8 +258,8 @@ namespace FactorioPumpjackBlueprint
                     yend--;
                     if(yend - y > minGapToReplace)
                     {
-                        undergroundPipes.Add(new Entity("pipe-to-ground", x, y, 0));
-                        undergroundPipes.Add(new Entity("pipe-to-ground", x, yend, 4));
+                        undergroundPipes.Add(new Entity("pipe-to-ground", x, y, Direction.North));
+                        undergroundPipes.Add(new Entity("pipe-to-ground", x, yend, Direction.South));
                         ugPipesEndPointsY.Add(new Coord(x, yend));
                         y = yend;
                     }
@@ -281,8 +281,8 @@ namespace FactorioPumpjackBlueprint
                     xend--;
                     if (xend - x > minGapToReplace)
                     {
-                        undergroundPipes.Add(new Entity("pipe-to-ground", x, y, 6));
-                        undergroundPipes.Add(new Entity("pipe-to-ground", xend, y, 2));
+                        undergroundPipes.Add(new Entity("pipe-to-ground", x, y, Direction.West));
+                        undergroundPipes.Add(new Entity("pipe-to-ground", xend, y, Direction.East));
                         ugPipesEndPointsX.Add(new Coord(xend, y));
                         x = xend;
                     }
@@ -291,7 +291,7 @@ namespace FactorioPumpjackBlueprint
 
             foreach(Entity ugPipe in undergroundPipes)
             {
-                if(ugPipe.Direction == 0)
+                if(ugPipe.Direction == Direction.North)
                 {
                     int x = (int)ugPipe.Position.X;
                     int y = (int)ugPipe.Position.Y;
@@ -301,7 +301,7 @@ namespace FactorioPumpjackBlueprint
                     }
                     pipesToReplace.Remove(new Coord(x, y));
                 }
-                else if(ugPipe.Direction == 6)
+                else if(ugPipe.Direction == Direction.West)
                 {
                     int x = (int)ugPipe.Position.X;
                     int y = (int)ugPipe.Position.Y;
