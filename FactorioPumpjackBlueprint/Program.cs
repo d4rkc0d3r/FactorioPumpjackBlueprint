@@ -19,14 +19,14 @@ namespace FactorioPumpjackBlueprint
 
             foreach (var entity in bp.Entities)
             {
-                entity.Position.Sub(minx - 5, miny - 5);
+                entity.Position.Sub(minx - 6, miny - 6);
             }
 
             double maxx = bp.Entities.Select(e => e.Position.X).Max();
             double maxy = bp.Entities.Select(e => e.Position.Y).Max();
 
-            int width = (int)Math.Ceiling(maxx) + 6;
-            int height = (int)Math.Ceiling(maxy) + 6;
+            int width = (int)Math.Ceiling(maxx) + 7;
+            int height = (int)Math.Ceiling(maxy) + 7;
 
             Entity[,] occupant = new Entity[width, height];
 
@@ -84,7 +84,7 @@ namespace FactorioPumpjackBlueprint
 
             IList<Entity> pipes = bp.Entities.Where(e => string.Equals(e.Name, "pipe")).ToList();
             IDictionary<int, int[,]> distanceMap = new Dictionary<int, int[,]>();
-            var offsets = new Coord[] {
+            var directNeighborOffsets = new Coord[] {
                 new Coord(-1,0),
                 new Coord(0,-1),
                 new Coord(1,0),
@@ -108,7 +108,7 @@ namespace FactorioPumpjackBlueprint
                     if (c.X < 0 || c.Y < 0 || c.X >= width || c.Y >= height || occupant[c.X, c.Y] != null || distanceField[c.X, c.Y] != -1)
                         continue;
                     int smallest = int.MaxValue;
-                    foreach (var offset in offsets)
+                    foreach (var offset in directNeighborOffsets)
                     {
                         Coord t = c.Add(offset);
                         if (t.X < 0 || t.Y < 0 || t.X >= width || t.Y >= height)
@@ -175,7 +175,7 @@ namespace FactorioPumpjackBlueprint
                 {
                     int smallest = int.MaxValue;
                     Coord next = null;
-                    foreach (var offset in offsets)
+                    foreach (var offset in directNeighborOffsets)
                     {
                         Coord t = c.Add(offset);
                         if (t.X < 0 || t.Y < 0 || t.X >= width || t.Y >= height)
@@ -219,7 +219,7 @@ namespace FactorioPumpjackBlueprint
 
             if(useSpeed3)
             {
-                foreach(var pumpjack in bp.Entities.Where(e => e.Name.Equals("pumpjack")))
+                foreach (var pumpjack in bp.Entities.Where(e => e.Name.Equals("pumpjack")))
                 {
                     pumpjack.Items = new List<Item>() { new Item() { Name = "speed-module-3", Count = 2 } };
                 }
@@ -229,9 +229,81 @@ namespace FactorioPumpjackBlueprint
             int pipeCount = bp.Entities.Count(e => e.Name.Contains("pipe"));
             bp.extraData = new { PipeCount = pipeCount, Fitness = -pipeCount, OilProduction = oilFlow };
 
-
+            if(placeBeacons)
+            {
+                int beaconRange = 5; // from beacon center to pumpjack center
+                Coord[] beaconBBOffsets = new Coord[] {
+                    new Coord(-1, -1),
+                    new Coord(-1, 0),
+                    new Coord(-1, 1),
+                    new Coord(0, -1),
+                    new Coord(0, 0),
+                    new Coord(0, 1),
+                    new Coord(1, -1),
+                    new Coord(1, 0),
+                    new Coord(1, 1)
+                };
+                int[,] affectedPumpjacks = new int[width, height];
+                var pumpjackCoordMap = bp.Entities.Where(e => e.Name.Equals("pumpjack")).ToDictionary(e => new Coord(e.Position));
+                foreach (var entity in bp.Entities)
+                {
+                    occupant[(int)entity.Position.X, (int)entity.Position.Y] = entity;
+                }
+                int maxAffectedPumpjacks = 0;
+                for (int y = 1; y < height - 1; y++)
+                {
+                    for (int x = 1; x < width - 1; x++)
+                    {
+                        if (beaconBBOffsets.Any(o => occupant[x + o.X, y + o.Y] != null))
+                        {
+                            continue;
+                        }
+                        for (int y2 = -beaconRange; y2 <= beaconRange; y2++)
+                        {
+                            for (int x2 = -beaconRange; x2 <= beaconRange; x2++)
+                            {
+                                if (pumpjackCoordMap.ContainsKey(new Coord(x + x2, y + y2)))
+                                {
+                                    affectedPumpjacks[x, y]++;
+                                }
+                            }
+                        }
+                        if (affectedPumpjacks[x, y] > maxAffectedPumpjacks)
+                        {
+                            maxAffectedPumpjacks = affectedPumpjacks[x, y];
+                        }
+                    }
+                }
+                for(int i = 2; i >= 2; i--)
+                {
+                    for (int y = 1; y < height - 1; y++)
+                    {
+                        for (int x = 1; x < width - 1; x++)
+                        {
+                            if (affectedPumpjacks[x, y] >= i)
+                            {
+                                bp.Entities.Add(new Entity("beacon", new Position(x, y)) {
+                                    Items = new List<Item>() { new Item() { Name = "speed-module-3", Count = 2} }
+                                });
+                                oilFlow += affectedPumpjacks[x, y] / 2.0;
+                                for (int y2 = -2; y2 <= 2; y2++)
+                                {
+                                    for (int x2 = -2; x2 <= 2; x2++)
+                                    {
+                                        affectedPumpjacks[x + x2, y + y2] = 0;
+                                    }
+                                }
+                                x += 2;
+                            }
+                        }
+                    }
+                }
+                bp.extraData = new { PipeCount = pipeCount, Fitness = oilFlow * 100 - pipeCount, OilProduction = oilFlow };
+            }
 
             bp.NormalizePositions();
+
+            bp.Name = bp.Entities.Count(e => e.Name.Equals("pumpjack")) + " pumpjack outpost | " + oilFlow + " oil flow";
 
             return bp;
         }
@@ -267,7 +339,7 @@ namespace FactorioPumpjackBlueprint
                         yend++;
                     }
                     yend--;
-                    if(yend - y > minGapToReplace)
+                    if (yend - y > minGapToReplace)
                     {
                         undergroundPipes.Add(new Entity("pipe-to-ground", x, y, Direction.North));
                         undergroundPipes.Add(new Entity("pipe-to-ground", x, yend, Direction.South));
@@ -300,9 +372,9 @@ namespace FactorioPumpjackBlueprint
                 }
             }
 
-            foreach(Entity ugPipe in undergroundPipes)
+            foreach (Entity ugPipe in undergroundPipes)
             {
-                if(ugPipe.Direction == Direction.North)
+                if (ugPipe.Direction == Direction.North)
                 {
                     int x = (int)ugPipe.Position.X;
                     int y = (int)ugPipe.Position.Y;
@@ -312,7 +384,7 @@ namespace FactorioPumpjackBlueprint
                     }
                     pipesToReplace.Remove(new Coord(x, y));
                 }
-                else if(ugPipe.Direction == Direction.West)
+                else if (ugPipe.Direction == Direction.West)
                 {
                     int x = (int)ugPipe.Position.X;
                     int y = (int)ugPipe.Position.Y;
@@ -339,16 +411,18 @@ namespace FactorioPumpjackBlueprint
             }
 
             bool useSpeed3 = true;
-            bool useBeacons = false;
+            bool useBeacons = true;
+            int maxIterationsWithoutImprovement = 250;
 
             int iterationsWithoutImprovement = 0;
             Blueprint bestBp = Blueprint.ImportBlueprintString(originalBp.ExportBlueprintString());
             Blueprint bestFinishedBp = LayPipes(originalBp, useSpeed3, useBeacons);
             double bestFitness = bestFinishedBp.extraData.Fitness;
-            Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes after " + iterationsWithoutImprovement + " iterations.");
+            Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes and " +
+                bestFinishedBp.extraData.OilProduction + " oil flow after " + iterationsWithoutImprovement + " iterations.");
             Random rng = new Random();
 
-            while(++iterationsWithoutImprovement <= 250)
+            while (++iterationsWithoutImprovement <= maxIterationsWithoutImprovement)
             {
                 Blueprint bp = Blueprint.ImportBlueprintString(bestBp.ExportBlueprintString());
                 var pumpjackIdMap = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).ToDictionary(e => e.EntityNumber);
@@ -365,10 +439,11 @@ namespace FactorioPumpjackBlueprint
 
                 if (testFitness > bestFitness)
                 {
-                    Console.WriteLine("Found layout with " + test.extraData.PipeCount + " pipes after " + iterationsWithoutImprovement + " iterations.");
                     bestFitness = testFitness;
                     bestBp = bp;
                     bestFinishedBp = test;
+                    Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes and " +
+                        bestFinishedBp.extraData.OilProduction + " oil flow after " + iterationsWithoutImprovement + " iterations.");
                     iterationsWithoutImprovement = 0;
                 }
             }
