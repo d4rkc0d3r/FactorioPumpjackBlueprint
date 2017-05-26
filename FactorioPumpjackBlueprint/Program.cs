@@ -227,7 +227,6 @@ namespace FactorioPumpjackBlueprint
 
             double oilFlow = bp.Entities.Select(e => e.Name.Equals("pumpjack") ? (useSpeed3 ? 2 : 1) : 0).Sum();
             int pipeCount = bp.Entities.Count(e => e.Name.Contains("pipe"));
-            bp.extraData = new { PipeCount = pipeCount, Fitness = -pipeCount, OilProduction = oilFlow };
 
             if (minPumpjacksPerBeacon > 0)
             {
@@ -302,8 +301,9 @@ namespace FactorioPumpjackBlueprint
                         }
                     }
                 }
-                bp.extraData = new { PipeCount = pipeCount, Fitness = oilFlow * 100 - pipeCount, OilProduction = oilFlow };
             }
+
+            bp.extraData = new { PipeCount = pipeCount, Fitness = oilFlow * 100 - pipeCount, OilProduction = oilFlow };
 
             bp.NormalizePositions();
 
