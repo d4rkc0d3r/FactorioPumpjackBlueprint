@@ -9,7 +9,6 @@ namespace FactorioPumpjackBlueprint
 {
     class Program
     {
-        static Blueprint LayPipes(Blueprint bp, bool useSpeed3, bool placeBeacons)
         {
             // Yes, this is a lazy copy
             bp = Blueprint.ImportBlueprintString(bp.ExportBlueprintString());
@@ -229,7 +228,6 @@ namespace FactorioPumpjackBlueprint
             int pipeCount = bp.Entities.Count(e => e.Name.Contains("pipe"));
             bp.extraData = new { PipeCount = pipeCount, Fitness = -pipeCount, OilProduction = oilFlow };
 
-            if(placeBeacons)
             {
                 int beaconRange = 5; // from beacon center to pumpjack center
                 Coord[] beaconBBOffsets = new Coord[] {
@@ -274,7 +272,6 @@ namespace FactorioPumpjackBlueprint
                         }
                     }
                 }
-                for(int i = 2; i >= 2; i--)
                 {
                     for (int y = 1; y < height - 1; y++)
                     {
@@ -411,12 +408,10 @@ namespace FactorioPumpjackBlueprint
             }
 
             bool useSpeed3 = true;
-            bool useBeacons = true;
             int maxIterationsWithoutImprovement = 250;
 
             int iterationsWithoutImprovement = 0;
             Blueprint bestBp = Blueprint.ImportBlueprintString(originalBp.ExportBlueprintString());
-            Blueprint bestFinishedBp = LayPipes(originalBp, useSpeed3, useBeacons);
             double bestFitness = bestFinishedBp.extraData.Fitness;
             Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes and " +
                 bestFinishedBp.extraData.OilProduction + " oil flow after " + iterationsWithoutImprovement + " iterations.");
@@ -434,7 +429,6 @@ namespace FactorioPumpjackBlueprint
                     int direction = rng.Next(4) * 2;
                     pumpjackIdMap[pumpjackIds[id]].Direction = direction;
                 }
-                var test = LayPipes(bp, useSpeed3, useBeacons);
                 double testFitness = test.extraData.Fitness;
 
                 if (testFitness > bestFitness)
