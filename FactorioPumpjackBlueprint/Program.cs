@@ -217,7 +217,8 @@ namespace FactorioPumpjackBlueprint
                 bp.Entities.Add(new Entity("pipe", p.X, p.Y));
             }
 
-            bp.extraData = new { PipeCount = bp.Entities.Count(e => e.Name.Contains("pipe")) };
+            var pipeCount = bp.Entities.Count(e => e.Name.Contains("pipe"));
+            bp.extraData = new { PipeCount = pipeCount, Fitness = -pipeCount };
 
             bp.NormalizePositions();
 
@@ -321,8 +322,8 @@ namespace FactorioPumpjackBlueprint
             int iterationsWithoutImprovement = 0;
             Blueprint bestBp = Blueprint.ImportBlueprintString(originalBp.ExportBlueprintString());
             Blueprint bestFinishedBp = LayPipes(originalBp);
-            int bestPipeCount = bestFinishedBp.extraData.PipeCount;
-            Console.WriteLine("Found layout with " + bestPipeCount + " pipes after " + iterationsWithoutImprovement + " iterations.");
+            int bestFitness = bestFinishedBp.extraData.Fitness;
+            Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes after " + iterationsWithoutImprovement + " iterations.");
             Random rng = new Random();
 
             while(++iterationsWithoutImprovement <= 250)
@@ -338,12 +339,12 @@ namespace FactorioPumpjackBlueprint
                     pumpjackIdMap[pumpjackIds[id]].Direction = direction;
                 }
                 var test = LayPipes(bp);
-                int testPipeCount = test.extraData.PipeCount;
+                int testFitness = test.extraData.Fitness;
 
-                if (testPipeCount < bestPipeCount)
+                if (testFitness > bestFitness)
                 {
-                    Console.WriteLine("Found layout with " + testPipeCount + " pipes after " + iterationsWithoutImprovement + " iterations.");
-                    bestPipeCount = testPipeCount;
+                    Console.WriteLine("Found layout with " + test.extraData.PipeCount + " pipes after " + iterationsWithoutImprovement + " iterations.");
+                    bestFitness = testFitness;
                     bestBp = bp;
                     bestFinishedBp = test;
                     iterationsWithoutImprovement = 0;
