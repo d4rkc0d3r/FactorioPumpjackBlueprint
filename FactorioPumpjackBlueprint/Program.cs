@@ -48,6 +48,7 @@ namespace FactorioPumpjackBlueprint
                 occupant[x + 1, y + 1] = entity;
             }
 
+            #region Add pump jack output pipes
             List<Entity> toAdd = new List<Entity>();
             foreach (var entity in bp.Entities)
             {
@@ -82,7 +83,9 @@ namespace FactorioPumpjackBlueprint
                 bp.Entities.Add(e);
             }
             toAdd.Clear();
+            #endregion
 
+            #region Create pump jack distance map with Dijkstra
             IList<Entity> pipes = bp.Entities.Where(e => string.Equals(e.Name, "pipe")).ToList();
             IDictionary<int, int[,]> distanceMap = new Dictionary<int, int[,]>();
             var directNeighborOffsets = new Coord[] {
@@ -128,7 +131,9 @@ namespace FactorioPumpjackBlueprint
                 }
                 distanceMap.Add(pipe.EntityNumber, distanceField);
             }
+            #endregion
 
+            #region Create pipe MST between pump jacks
             var newPipeSet = new HashSet<Coord>();
             var allPipeIds = pipes.Select(p => p.EntityNumber).ToList();
             var allEdges = new List<Edge>();
@@ -196,12 +201,13 @@ namespace FactorioPumpjackBlueprint
                     newPipeSet.Add(c);
                 }
             }
-
             foreach (var pipe in pipes)
             {
                 newPipeSet.Remove(new Coord(pipe.Position));
             }
+            #endregion
 
+            #region Make underground pipes
             var allPipes = new HashSet<Coord>();
             allPipes.UnionWith(pipes.Select(e => new Coord(e.Position)));
             allPipes.UnionWith(newPipeSet);
@@ -212,13 +218,17 @@ namespace FactorioPumpjackBlueprint
             {
                 bp.Entities.Add(ugPipe);
             }
-
             foreach (var p in newPipeSet)
             {
                 bp.Entities.Add(new Entity("pipe", p.X, p.Y));
             }
+            foreach (var entity in bp.Entities)
+            {
+                occupant[(int)entity.Position.X, (int)entity.Position.Y] = entity;
+            }
+            #endregion
 
-            if(useSpeed3)
+            if (useSpeed3)
             {
                 foreach (var pumpjack in bp.Entities.Where(e => e.Name.Equals("pumpjack")))
                 {
@@ -229,6 +239,7 @@ namespace FactorioPumpjackBlueprint
             double oilFlow = bp.Entities.Select(e => e.Name.Equals("pumpjack") ? (useSpeed3 ? 2 : 1) : 0).Sum();
             int pipeCount = bp.Entities.Count(e => e.Name.Contains("pipe"));
 
+            #region Place beacons
             if (minPumpjacksPerBeacon > 0)
             {
                 const int BEACON_RANGE_RADIUS = 5; // from beacon center to pumpjack center
@@ -245,10 +256,6 @@ namespace FactorioPumpjackBlueprint
                 };
                 int[,] affectedPumpjacks = new int[width, height];
                 var pumpjackCoordMap = bp.Entities.Where(e => e.Name.Equals("pumpjack")).ToDictionary(e => new Coord(e.Position));
-                foreach (var entity in bp.Entities)
-                {
-                    occupant[(int)entity.Position.X, (int)entity.Position.Y] = entity;
-                }
                 int maxAffectedPumpjacks = 0;
                 for (int y = 1; y < height - 1; y++)
                 {
@@ -305,7 +312,9 @@ namespace FactorioPumpjackBlueprint
                     }
                 }
             }
+            #endregion
 
+            #region Place medium electric poles
             {
                 var unpoweredEntityMap = bp.Entities.Where(e => e.Name.Equals("pumpjack") || e.Name.Equals("beacon")).ToDictionary(e => new Coord(e.Position));
                 while (unpoweredEntityMap.Count > 0)
@@ -359,6 +368,7 @@ namespace FactorioPumpjackBlueprint
                     }
                 }
             }
+            #endregion
 
             bp.extraData = new { PipeCount = pipeCount, Fitness = oilFlow * 100 - pipeCount, OilProduction = oilFlow };
             bp.Name = bp.Entities.Count(e => e.Name.Equals("pumpjack")) + " pumpjack outpost | " + oilFlow + " oil flow";
