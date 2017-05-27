@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Text.RegularExpressions;
 
 namespace FactorioPumpjackBlueprint
 {
@@ -468,9 +469,30 @@ namespace FactorioPumpjackBlueprint
                 return;
             }
 
-            bool useSpeed3 = true;
-            int minPumpjacksPerBeacon = 2;
-            int maxIterationsWithoutImprovement = 250;
+            bool useSpeed3 = false;
+            int minPumpjacksPerBeacon = 0;
+            int maxIterationsWithoutImprovement = 100;
+
+            foreach (string arg in args.Select(s => s.ToLowerInvariant()))
+            {
+                if (Regex.IsMatch(arg, "-s(peed)?3"))
+                {
+                    useSpeed3 = true;
+                }
+                else if (Regex.IsMatch(arg, "-b(eacon)?"))
+                {
+                    minPumpjacksPerBeacon = 2;
+                    useSpeed3 = true;
+                }
+                else if (Regex.IsMatch(arg, "-i=\\d+"))
+                {
+                    maxIterationsWithoutImprovement = int.Parse(arg.Substring(3));
+                }
+                else
+                {
+                    Console.WriteLine("Unknown option: " + arg);
+                }
+            }
 
             int iterationsWithoutImprovement = 0;
             Blueprint bestBp = Blueprint.ImportBlueprintString(originalBp.ExportBlueprintString());
