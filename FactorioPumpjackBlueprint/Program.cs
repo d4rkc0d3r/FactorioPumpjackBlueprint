@@ -321,6 +321,7 @@ namespace FactorioPumpjackBlueprint
                 {
                     // actual value would be 4 but usually results in multiple disconnected power grids
                     // thus a value of 2 is chosen so that the algorithm spams power poles to avoid said problem
+                    ///TODO: change back to 4 and then create an MST to connect all power poles
                     const int POWER_POLE_REACH_RADIUS = 2;
                     int highestPowerCount = 0;
                     Coord bestPosition = new Coord(0, 0);
