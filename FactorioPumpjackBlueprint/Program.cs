@@ -317,12 +317,13 @@ namespace FactorioPumpjackBlueprint
             #region Place medium electric poles
             {
                 var unpoweredEntityMap = bp.Entities.Where(e => e.Name.Equals("pumpjack") || e.Name.Equals("beacon")).ToDictionary(e => new Coord(e.Position));
+                var powerPoles = new List<Entity>();
                 while (unpoweredEntityMap.Count > 0)
                 {
                     // actual value would be 4 but usually results in multiple disconnected power grids
                     // thus a value of 2 is chosen so that the algorithm spams power poles to avoid said problem
                     ///TODO: change back to 4 and then create an MST to connect all power poles
-                    const int POWER_POLE_REACH_RADIUS = 2;
+                    const int POWER_POLE_REACH_RADIUS = 4;
                     double highestPowerCount = 0;
                     Position center = new Position(width / 2.0, height / 2.0);
                     double centerBiasDivider = 1 + Math.Sqrt(Math.Pow(center.X, 2) + Math.Pow(center.Y, 2));
@@ -365,11 +366,60 @@ namespace FactorioPumpjackBlueprint
                     }
                     Entity powerPole = new Entity("medium-electric-pole", bestPosition.X, bestPosition.Y);
                     bp.Entities.Add(powerPole);
+                    powerPoles.Add(powerPole);
                     occupant[bestPosition.X, bestPosition.Y] = powerPole;
                     foreach (Coord c in bestPoweredEntities)
                     {
                         unpoweredEntityMap.Remove(c);
                     }
+                }
+                var allPoleIds = powerPoles.Select(p => p.EntityNumber).ToList();
+                allEdges = new List<Edge>();
+                mstEdges = new HashSet<Edge>();
+                mstIds = new HashSet<int>();
+                for (int i = 0; i < powerPoles.Count; i++)
+                {
+                    var p1 = powerPoles[i];
+                    for (int j = 0; j < powerPoles.Count; j++)
+                    {
+                        if (i == j)
+                            continue;
+                        var p2 = powerPoles[j];
+                        var distance = p1.Position.DistanceTo(p2.Position);
+                        allEdges.Add(new Edge() { Start = p1.EntityNumber, End = powerPoles[j].EntityNumber, Distance = distance });
+                    }
+                }
+                allEdges = allEdges.OrderBy(e => e.Distance).ToList();
+                edge = allEdges.First();
+                mstIds.Add(edge.Start);
+                mstIds.Add(edge.End);
+                mstEdges.Add(edge);
+                while (mstIds.Count < allPoleIds.Count)
+                {
+                    edge = allEdges.First(e => (!mstIds.Contains(e.Start) && mstIds.Contains(e.End)) || (mstIds.Contains(e.Start) && !mstIds.Contains(e.End)));
+                    mstIds.Add(edge.Start);
+                    mstIds.Add(edge.End);
+                    mstEdges.Add(edge);
+                }
+                var idToPoleMap = powerPoles.ToDictionary(p => p.EntityNumber);
+                var newPoleSet = new HashSet<Coord>();
+                foreach (var mstEdge in mstEdges)
+                {
+                    if(mstEdge.Distance <= 9)
+                        continue;
+                    Entity pole1 = idToPoleMap[mstEdge.Start];
+                    Entity pole2 = idToPoleMap[mstEdge.End];
+                    Coord start = new Coord(pole1.Position);
+                    Coord end = new Coord(pole2.Position);
+                    //TODO: path find from pole1 to pole2
+                }
+                foreach (var pole in powerPoles)
+                {
+                    newPoleSet.Remove(new Coord(pole.Position));
+                }
+                foreach (var pole in newPoleSet)
+                {
+                    bp.Entities.Add(new Entity("medium-electric-pole", pole.X, pole.Y));
                 }
             }
             #endregion

@@ -50,6 +50,11 @@ namespace FactorioPumpjackBlueprint
             return this;
         }
 
+        public double DistanceTo(Position p)
+        {
+            return Math.Sqrt(Math.Pow(X - p.X, 2) + Math.Pow(Y - p.Y, 2));
+        }
+
         public Position()
         {
 
