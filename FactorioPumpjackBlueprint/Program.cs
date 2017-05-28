@@ -323,7 +323,9 @@ namespace FactorioPumpjackBlueprint
                     // thus a value of 2 is chosen so that the algorithm spams power poles to avoid said problem
                     ///TODO: change back to 4 and then create an MST to connect all power poles
                     const int POWER_POLE_REACH_RADIUS = 2;
-                    int highestPowerCount = 0;
+                    double highestPowerCount = 0;
+                    Position center = new Position(width / 2.0, height / 2.0);
+                    double centerBiasDivider = 1 + Math.Sqrt(Math.Pow(center.X, 2) + Math.Pow(center.Y, 2));
                     Coord bestPosition = new Coord(0, 0);
                     IList<Coord> bestPoweredEntities = new List<Coord>();
                     for (int y = 0; y < height; y++)
@@ -335,7 +337,7 @@ namespace FactorioPumpjackBlueprint
                                 continue;
                             }
                             IList<Coord> poweredEntities = new List<Coord>();
-                            int sum = 0;
+                            double sum = 0;
                             for (int y2 = -POWER_POLE_REACH_RADIUS; y2 <= POWER_POLE_REACH_RADIUS; y2++)
                             {
                                 for (int x2 = -POWER_POLE_REACH_RADIUS; x2 <= POWER_POLE_REACH_RADIUS; x2++)
@@ -348,6 +350,7 @@ namespace FactorioPumpjackBlueprint
                                     }
                                 }
                             }
+                            sum -= Math.Sqrt(Math.Pow(center.X - x, 2) + Math.Pow(center.Y - y, 2)) / centerBiasDivider;
                             if (sum > highestPowerCount)
                             {
                                 bestPosition = new Coord(x, y);
@@ -356,7 +359,7 @@ namespace FactorioPumpjackBlueprint
                             }
                         }
                     }
-                    if (highestPowerCount == 0)
+                    if (highestPowerCount <= 0)
                     {
                         break;
                     }
