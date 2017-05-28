@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
+using FactorioPumpjackBlueprint.Pathfinding;
 
 namespace FactorioPumpjackBlueprint
 {
@@ -320,9 +321,6 @@ namespace FactorioPumpjackBlueprint
                 var powerPoles = new List<Entity>();
                 while (unpoweredEntityMap.Count > 0)
                 {
-                    // actual value would be 4 but usually results in multiple disconnected power grids
-                    // thus a value of 2 is chosen so that the algorithm spams power poles to avoid said problem
-                    ///TODO: change back to 4 and then create an MST to connect all power poles
                     const int POWER_POLE_REACH_RADIUS = 4;
                     double highestPowerCount = 0;
                     Position center = new Position(width / 2.0, height / 2.0);
@@ -403,6 +401,7 @@ namespace FactorioPumpjackBlueprint
                 }
                 var idToPoleMap = powerPoles.ToDictionary(p => p.EntityNumber);
                 var newPoleSet = new HashSet<Coord>();
+                AStar astar = new AStar(occupant, 9);
                 foreach (var mstEdge in mstEdges)
                 {
                     if(mstEdge.Distance <= 9)
@@ -411,7 +410,11 @@ namespace FactorioPumpjackBlueprint
                     Entity pole2 = idToPoleMap[mstEdge.End];
                     Coord start = new Coord(pole1.Position);
                     Coord end = new Coord(pole2.Position);
-                    //TODO: path find from pole1 to pole2
+                    IEnumerable<Coord> e = astar.FindPath(start, end);
+                    foreach (Coord c in e)
+                    {
+                        newPoleSet.Add(c);
+                    }
                 }
                 foreach (var pole in powerPoles)
                 {

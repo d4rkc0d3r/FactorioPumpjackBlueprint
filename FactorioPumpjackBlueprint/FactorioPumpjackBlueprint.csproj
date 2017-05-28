@@ -88,6 +88,9 @@
     <Compile Include="Entity.cs" />
     <Compile Include="Icon.cs" />
     <Compile Include="Item.cs" />
+    <Compile Include="Pathfinding\AStar.cs" />
+    <Compile Include="Pathfinding\PathPoint.cs" />
+    <Compile Include="Pathfinding\PathPointMinHeap.cs" />
     <Compile Include="Position.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
