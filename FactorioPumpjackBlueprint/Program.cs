@@ -559,6 +559,7 @@ namespace FactorioPumpjackBlueprint
             bool useSpeed3 = false;
             int minPumpjacksPerBeacon = 0;
             int maxIterationsWithoutImprovement = 100;
+            bool showTimeUsedPercent = false;
 
             foreach (string arg in args.Select(s => s.ToLowerInvariant()))
             {
@@ -574,6 +575,10 @@ namespace FactorioPumpjackBlueprint
                 else if (Regex.IsMatch(arg, "-i=\\d+"))
                 {
                     maxIterationsWithoutImprovement = int.Parse(arg.Substring(3));
+                }
+                else if (Regex.IsMatch(arg, "-t(ime)?"))
+                {
+                    showTimeUsedPercent = true;
                 }
                 else
                 {
@@ -615,7 +620,8 @@ namespace FactorioPumpjackBlueprint
                 }
             }
 
-            Profiler.PrintTimeUsedPercent();
+            if(showTimeUsedPercent)
+                Profiler.PrintTimeUsedPercent();
             
             Clipboard.SetText(bestFinishedBp.ExportBlueprintString());
         }
