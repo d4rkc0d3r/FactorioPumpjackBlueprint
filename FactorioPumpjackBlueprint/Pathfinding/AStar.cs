@@ -72,6 +72,7 @@ namespace FactorioPumpjackBlueprint.Pathfinding
                 float distance = (float)Math.Sqrt(x * x + y * y);
                 if (distance > maxDistancePerStep || distance < 1)
                     continue;
+                distance = (float)Math.Abs(maxDistancePerStep / 2 - distance);
                 offsetPoints.Add(new Tuple<Coord,float>(new Coord(x, y), (float)(distance + maxDistancePerStep)));
             }
             offsetPoints = offsetPoints.OrderByDescending(t => t.Item2).ToList();
