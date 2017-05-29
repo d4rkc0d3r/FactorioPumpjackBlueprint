@@ -270,30 +270,30 @@ namespace FactorioPumpjackBlueprint
                     new Coord(1, 1)
                 };
                 int[,] affectedPumpjacks = new int[width, height];
-                var pumpjackCoordMap = bp.Entities.Where(e => e.Name.Equals("pumpjack")).ToDictionary(e => new Coord(e.Position));
-                int maxAffectedPumpjacks = 0;
-                for (int y = 1; y < height - 1; y++)
+                int[,] pumpjackGrid = new int[width, height];
+                foreach (var pos in bp.Entities.Where(e => e.Name.Equals("pumpjack")).Select(e => e.Position))
                 {
-                    for (int x = 1; x < width - 1; x++)
+                    pumpjackGrid[(int)pos.X, (int)pos.Y] = 1;
+                }
+                int maxAffectedPumpjacks = 0;
+                for (int y1 = 1; y1 < height - 1; y1++)
+                {
+                    for (int x1 = 1; x1 < width - 1; x1++)
                     {
-                        if (beaconBBOffsets.Any(o => occupant[x + o.X, y + o.Y] != null))
-                        {
+                        if (beaconBBOffsets.Any(o => occupant[x1 + o.X, y1 + o.Y] != null))
                             continue;
-                        }
                         for (int y2 = -BEACON_RANGE_RADIUS; y2 <= BEACON_RANGE_RADIUS; y2++)
                         {
                             for (int x2 = -BEACON_RANGE_RADIUS; x2 <= BEACON_RANGE_RADIUS; x2++)
                             {
-                                if (pumpjackCoordMap.ContainsKey(new Coord(x + x2, y + y2)))
-                                {
-                                    affectedPumpjacks[x, y]++;
-                                }
+                                int x = x1 + x2;
+                                int y = y1 + y2;
+                                if (x >= 0 && y >= 0 && x < width && y < height)
+                                    affectedPumpjacks[x1, y1] += pumpjackGrid[x1 + x2, y1 + y2];
                             }
                         }
-                        if (affectedPumpjacks[x, y] > maxAffectedPumpjacks)
-                        {
-                            maxAffectedPumpjacks = affectedPumpjacks[x, y];
-                        }
+                        if (affectedPumpjacks[x1, y1] > maxAffectedPumpjacks)
+                            maxAffectedPumpjacks = affectedPumpjacks[x1, y1];
                     }
                 }
                 for (int i = minPumpjacksPerBeacon; i >= minPumpjacksPerBeacon; i--)
