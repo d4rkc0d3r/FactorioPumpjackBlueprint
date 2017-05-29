@@ -329,129 +329,164 @@ namespace FactorioPumpjackBlueprint
             Profiler.EndSection();
             #endregion
 
-            #region Place medium electric poles
-            {
-                Profiler.StartSection("power1");
-                var unpoweredEntityMap = bp.Entities.Where(e => e.Name.Equals("pumpjack") || e.Name.Equals("beacon")).ToDictionary(e => new Coord(e.Position));
-                var powerPoles = new List<Entity>();
-                while (unpoweredEntityMap.Count > 0)
-                {
-                    const int POWER_POLE_REACH_RADIUS = 4;
-                    double highestPowerCount = 0;
-                    Position center = new Position(width / 2.0, height / 2.0);
-                    double centerBiasDivider = 1 + Math.Sqrt(Math.Pow(center.X, 2) + Math.Pow(center.Y, 2));
-                    Coord bestPosition = new Coord(0, 0);
-                    IList<Coord> bestPoweredEntities = new List<Coord>();
-                    for (int y = 0; y < height; y++)
-                    {
-                        for (int x = 0; x < width; x++)
-                        {
-                            if (occupant[x, y] != null)
-                            {
-                                continue;
-                            }
-                            IList<Coord> poweredEntities = new List<Coord>();
-                            double sum = 0;
-                            for (int y2 = -POWER_POLE_REACH_RADIUS; y2 <= POWER_POLE_REACH_RADIUS; y2++)
-                            {
-                                for (int x2 = -POWER_POLE_REACH_RADIUS; x2 <= POWER_POLE_REACH_RADIUS; x2++)
-                                {
-                                    Coord c = new Coord(x + x2, y + y2);
-                                    if (unpoweredEntityMap.ContainsKey(c))
-                                    {
-                                        sum++;
-                                        poweredEntities.Add(c);
-                                    }
-                                }
-                            }
-                            sum -= Math.Sqrt(Math.Pow(center.X - x, 2) + Math.Pow(center.Y - y, 2)) / centerBiasDivider;
-                            if (sum > highestPowerCount)
-                            {
-                                bestPosition = new Coord(x, y);
-                                highestPowerCount = sum;
-                                bestPoweredEntities = poweredEntities;
-                            }
-                        }
-                    }
-                    if (highestPowerCount <= 0)
-                    {
-                        break;
-                    }
-                    Entity powerPole = new Entity("medium-electric-pole", bestPosition.X, bestPosition.Y);
-                    bp.Entities.Add(powerPole);
-                    powerPoles.Add(powerPole);
-                    occupant[bestPosition.X, bestPosition.Y] = powerPole;
-                    foreach (Coord c in bestPoweredEntities)
-                    {
-                        unpoweredEntityMap.Remove(c);
-                    }
-                }
-                Profiler.EndSection();
-                Profiler.StartSection("powerMST");
-                var allPoleIds = powerPoles.Select(p => p.EntityNumber).ToList();
-                allEdges = new List<Edge>();
-                mstEdges = new HashSet<Edge>();
-                mstIds = new HashSet<int>();
-                for (int i = 0; i < powerPoles.Count; i++)
-                {
-                    var p1 = powerPoles[i];
-                    for (int j = 0; j < powerPoles.Count; j++)
-                    {
-                        if (i == j)
-                            continue;
-                        var p2 = powerPoles[j];
-                        var distance = p1.Position.DistanceTo(p2.Position);
-                        allEdges.Add(new Edge() { Start = p1.EntityNumber, End = powerPoles[j].EntityNumber, Distance = distance });
-                    }
-                }
-                allEdges = allEdges.OrderBy(e => e.Distance).ToList();
-                edge = allEdges.First();
-                mstIds.Add(edge.Start);
-                mstIds.Add(edge.End);
-                mstEdges.Add(edge);
-                while (mstIds.Count < allPoleIds.Count)
-                {
-                    edge = allEdges.First(e => (!mstIds.Contains(e.Start) && mstIds.Contains(e.End)) || (mstIds.Contains(e.Start) && !mstIds.Contains(e.End)));
-                    mstIds.Add(edge.Start);
-                    mstIds.Add(edge.End);
-                    mstEdges.Add(edge);
-                }
-                Profiler.EndSection();
-                Profiler.StartSection("powerAStar");
-                var idToPoleMap = powerPoles.ToDictionary(p => p.EntityNumber);
-                var newPoleSet = new HashSet<Coord>();
-                AStar astar = new AStar(occupant, 9);
-                foreach (var mstEdge in mstEdges)
-                {
-                    if(mstEdge.Distance <= 9)
-                        continue;
-                    Entity pole1 = idToPoleMap[mstEdge.Start];
-                    Entity pole2 = idToPoleMap[mstEdge.End];
-                    Coord start = new Coord(pole1.Position);
-                    Coord end = new Coord(pole2.Position);
-                    IEnumerable<Coord> e = astar.FindPath(start, end);
-                    foreach (Coord c in e)
-                    {
-                        newPoleSet.Add(c);
-                    }
-                }
-                foreach (var pole in powerPoles)
-                {
-                    newPoleSet.Remove(new Coord(pole.Position));
-                }
-                foreach (var pole in newPoleSet)
-                {
-                    bp.Entities.Add(new Entity("medium-electric-pole", pole.X, pole.Y));
-                }
-                Profiler.EndSection();
-            }
-            #endregion
-
             bp.extraData = new { PipeCount = pipeCount, Fitness = oilFlow * 100 - pipeCount, OilProduction = oilFlow };
             bp.Name = bp.Entities.Count(e => e.Name.Equals("pumpjack")) + " pumpjack outpost | " + oilFlow + " oil flow";
             bp.NormalizePositions();
 
             return bp;
+        }
+
+        static void PlacePowerPoles(Blueprint bp)
+        {
+            Profiler.StartSection("initializePower");
+            double minx = bp.Entities.Select(e => e.Position.X).Min();
+            double miny = bp.Entities.Select(e => e.Position.Y).Min();
+
+            foreach (var entity in bp.Entities)
+            {
+                entity.Position.Sub(minx - 6, miny - 6);
+            }
+
+            double maxx = bp.Entities.Select(e => e.Position.X).Max();
+            double maxy = bp.Entities.Select(e => e.Position.Y).Max();
+
+            int width = (int)Math.Ceiling(maxx) + 7;
+            int height = (int)Math.Ceiling(maxy) + 7;
+
+            Entity[,] occupant = new Entity[width, height];
+
+            foreach (var entity in bp.Entities)
+            {
+                int x = (int)entity.Position.X;
+                int y = (int)entity.Position.Y;
+                occupant[x, y] = entity;
+                if (entity.Name.Equals("pumpjack") || entity.Name.Equals("beacon"))
+                {
+                    occupant[x - 1, y - 1] = entity;
+                    occupant[x - 1, y] = entity;
+                    occupant[x - 1, y + 1] = entity;
+                    occupant[x, y - 1] = entity;
+                    occupant[x, y + 1] = entity;
+                    occupant[x + 1, y - 1] = entity;
+                    occupant[x + 1, y] = entity;
+                    occupant[x + 1, y + 1] = entity;
+                }
+            }
+            Profiler.EndSection();
+            Profiler.StartSection("power1");
+            var unpoweredEntityMap = bp.Entities.Where(e => e.Name.Equals("pumpjack") || e.Name.Equals("beacon")).ToDictionary(e => new Coord(e.Position));
+            var powerPoles = new List<Entity>();
+            while (unpoweredEntityMap.Count > 0)
+            {
+                const int POWER_POLE_REACH_RADIUS = 4;
+                double highestPowerCount = 0;
+                Position center = new Position(width / 2.0, height / 2.0);
+                double centerBiasDivider = 1 + Math.Sqrt(Math.Pow(center.X, 2) + Math.Pow(center.Y, 2));
+                Coord bestPosition = new Coord(0, 0);
+                IList<Coord> bestPoweredEntities = new List<Coord>();
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        if (occupant[x, y] != null)
+                        {
+                            continue;
+                        }
+                        IList<Coord> poweredEntities = new List<Coord>();
+                        double sum = 0;
+                        for (int y2 = -POWER_POLE_REACH_RADIUS; y2 <= POWER_POLE_REACH_RADIUS; y2++)
+                        {
+                            for (int x2 = -POWER_POLE_REACH_RADIUS; x2 <= POWER_POLE_REACH_RADIUS; x2++)
+                            {
+                                Coord c = new Coord(x + x2, y + y2);
+                                if (unpoweredEntityMap.ContainsKey(c))
+                                {
+                                    sum++;
+                                    poweredEntities.Add(c);
+                                }
+                            }
+                        }
+                        sum -= Math.Sqrt(Math.Pow(center.X - x, 2) + Math.Pow(center.Y - y, 2)) / centerBiasDivider;
+                        if (sum > highestPowerCount)
+                        {
+                            bestPosition = new Coord(x, y);
+                            highestPowerCount = sum;
+                            bestPoweredEntities = poweredEntities;
+                        }
+                    }
+                }
+                if (highestPowerCount <= 0)
+                {
+                    break;
+                }
+                Entity powerPole = new Entity("medium-electric-pole", bestPosition.X, bestPosition.Y);
+                bp.Entities.Add(powerPole);
+                powerPoles.Add(powerPole);
+                occupant[bestPosition.X, bestPosition.Y] = powerPole;
+                foreach (Coord c in bestPoweredEntities)
+                {
+                    unpoweredEntityMap.Remove(c);
+                }
+            }
+            Profiler.EndSection();
+            Profiler.StartSection("powerMST");
+            var allPoleIds = powerPoles.Select(p => p.EntityNumber).ToList();
+            var allEdges = new List<Edge>();
+            var mstEdges = new HashSet<Edge>();
+            var mstIds = new HashSet<int>();
+            for (int i = 0; i < powerPoles.Count; i++)
+            {
+                var p1 = powerPoles[i];
+                for (int j = 0; j < powerPoles.Count; j++)
+                {
+                    if (i == j)
+                        continue;
+                    var p2 = powerPoles[j];
+                    var distance = p1.Position.DistanceTo(p2.Position);
+                    allEdges.Add(new Edge() { Start = p1.EntityNumber, End = powerPoles[j].EntityNumber, Distance = distance });
+                }
+            }
+            allEdges = allEdges.OrderBy(e => e.Distance).ToList();
+            var edge = allEdges.First();
+            mstIds.Add(edge.Start);
+            mstIds.Add(edge.End);
+            mstEdges.Add(edge);
+            while (mstIds.Count < allPoleIds.Count)
+            {
+                edge = allEdges.First(e => (!mstIds.Contains(e.Start) && mstIds.Contains(e.End)) || (mstIds.Contains(e.Start) && !mstIds.Contains(e.End)));
+                mstIds.Add(edge.Start);
+                mstIds.Add(edge.End);
+                mstEdges.Add(edge);
+            }
+            Profiler.EndSection();
+            Profiler.StartSection("powerAStar");
+            var idToPoleMap = powerPoles.ToDictionary(p => p.EntityNumber);
+            var newPoleSet = new HashSet<Coord>();
+            AStar astar = new AStar(occupant, 9);
+            foreach (var mstEdge in mstEdges)
+            {
+                if (mstEdge.Distance <= 9)
+                    continue;
+                Entity pole1 = idToPoleMap[mstEdge.Start];
+                Entity pole2 = idToPoleMap[mstEdge.End];
+                Coord start = new Coord(pole1.Position);
+                Coord end = new Coord(pole2.Position);
+                IEnumerable<Coord> e = astar.FindPath(start, end);
+                foreach (Coord c in e)
+                {
+                    newPoleSet.Add(c);
+                }
+            }
+            foreach (var pole in powerPoles)
+            {
+                newPoleSet.Remove(new Coord(pole.Position));
+            }
+            foreach (var pole in newPoleSet)
+            {
+                bp.Entities.Add(new Entity("medium-electric-pole", pole.X, pole.Y));
+            }
+            bp.NormalizePositions();
+            Profiler.EndSection();
         }
 
         static HashSet<Entity> ReplaceStraightPipeWithUnderground(HashSet<Coord> pipesToReplace, int minGapToReplace = 1, HashSet<Coord> allPipes = null)
@@ -619,6 +654,8 @@ namespace FactorioPumpjackBlueprint
                     iterationsWithoutImprovement = 0;
                 }
             }
+
+            PlacePowerPoles(bestFinishedBp);
 
             if(showTimeUsedPercent)
                 Profiler.PrintTimeUsedPercent();
