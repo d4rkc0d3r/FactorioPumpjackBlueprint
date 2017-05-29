@@ -112,18 +112,21 @@ namespace FactorioPumpjackBlueprint
                         distanceField[x, y] = -1;
                     }
                 }
-                Queue<Coord> openQueue = new Queue<Coord>();
-                openQueue.Enqueue(new Coord(pipe.Position));
-                while (openQueue.Count > 0)
+                Queue<int> openQueueX = new Queue<int>();
+                Queue<int> openQueueY = new Queue<int>();
+                openQueueX.Enqueue((int)pipe.Position.X);
+                openQueueY.Enqueue((int)pipe.Position.Y);
+                while (openQueueX.Count > 0)
                 {
-                    Coord c = openQueue.Dequeue();
-                    if (c.X < 0 || c.Y < 0 || c.X >= width || c.Y >= height || occupant[c.X, c.Y] != null || distanceField[c.X, c.Y] != -1)
+                    int x = openQueueX.Dequeue();
+                    int y = openQueueY.Dequeue();
+                    if (x < 0 || y < 0 || x >= width || y >= height || occupant[x, y] != null || distanceField[x, y] != -1)
                         continue;
                     int smallest = int.MaxValue;
                     foreach (var offset in directNeighborOffsets)
                     {
-                        int x2 = c.X + offset.X;
-                        int y2 = c.Y + offset.Y;
+                        int x2 = x + offset.X;
+                        int y2 = y + offset.Y;
                         if (x2 < 0 || y2 < 0 || x2 >= width || y2 >= height)
                             continue;
                         int d = distanceField[x2, y2];
@@ -133,10 +136,11 @@ namespace FactorioPumpjackBlueprint
                         }
                         else
                         {
-                            openQueue.Enqueue(new Coord(x2, y2));
+                            openQueueX.Enqueue(x2);
+                            openQueueY.Enqueue(y2);
                         }
                     }
-                    distanceField[c.X, c.Y] = (smallest == int.MaxValue) ? 0 : smallest + 1;
+                    distanceField[x, y] = (smallest == int.MaxValue) ? 0 : smallest + 1;
                 }
                 distanceMap.Add(pipe.EntityNumber, distanceField);
             }
