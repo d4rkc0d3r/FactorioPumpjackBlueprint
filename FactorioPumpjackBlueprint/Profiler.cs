@@ -36,7 +36,7 @@ namespace FactorioPumpjackBlueprint
             foreach (var pair in timeUsed.OrderByDescending(p => p.Value))
             {
                 double p = Math.Round(pair.Value / sum * 10000) / 100;
-                Console.WriteLine("Section {0," + maxSectionNameLength + "} took {1,5}% of time.", pair.Key, p);
+                Console.WriteLine("Section {0," + maxSectionNameLength + "} took {1,5:0.00}% of time.", pair.Key, p);
             }
         }
     }
