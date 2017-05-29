@@ -14,8 +14,11 @@ namespace FactorioPumpjackBlueprint
         static Blueprint LayPipes(Blueprint bp, bool useSpeed3, int minPumpjacksPerBeacon)
         {
             // Yes, this is a lazy copy
+            Profiler.StartSection("lazyCopy");
             bp = Blueprint.ImportBlueprintString(bp.ExportBlueprintString());
+            Profiler.EndSection();
 
+            Profiler.StartSection("initializeLayPipes");
             double minx = bp.Entities.Select(e => e.Position.X).Min();
             double miny = bp.Entities.Select(e => e.Position.Y).Min();
 
@@ -48,8 +51,10 @@ namespace FactorioPumpjackBlueprint
                 occupant[x + 1, y] = entity;
                 occupant[x + 1, y + 1] = entity;
             }
+            Profiler.EndSection();
 
             #region Add pump jack output pipes
+            Profiler.StartSection("pumpjackOutputPipes");
             List<Entity> toAdd = new List<Entity>();
             foreach (var entity in bp.Entities)
             {
@@ -84,9 +89,11 @@ namespace FactorioPumpjackBlueprint
                 bp.Entities.Add(e);
             }
             toAdd.Clear();
+            Profiler.EndSection();
             #endregion
 
             #region Create pump jack distance map with Dijkstra
+            Profiler.StartSection("distanceMap");
             IList<Entity> pipes = bp.Entities.Where(e => string.Equals(e.Name, "pipe")).ToList();
             IDictionary<int, int[,]> distanceMap = new Dictionary<int, int[,]>();
             var directNeighborOffsets = new Coord[] {
@@ -132,9 +139,11 @@ namespace FactorioPumpjackBlueprint
                 }
                 distanceMap.Add(pipe.EntityNumber, distanceField);
             }
+            Profiler.EndSection();
             #endregion
 
             #region Create pipe MST between pump jacks
+            Profiler.StartSection("pumpjackPipeMST");
             var newPipeSet = new HashSet<Coord>();
             var allPipeIds = pipes.Select(p => p.EntityNumber).ToList();
             var allEdges = new List<Edge>();
@@ -206,9 +215,11 @@ namespace FactorioPumpjackBlueprint
             {
                 newPipeSet.Remove(new Coord(pipe.Position));
             }
+            Profiler.EndSection();
             #endregion
 
             #region Make underground pipes
+            Profiler.StartSection("ugPipes");
             var allPipes = new HashSet<Coord>();
             allPipes.UnionWith(pipes.Select(e => new Coord(e.Position)));
             allPipes.UnionWith(newPipeSet);
@@ -227,6 +238,7 @@ namespace FactorioPumpjackBlueprint
             {
                 occupant[(int)entity.Position.X, (int)entity.Position.Y] = entity;
             }
+            Profiler.EndSection();
             #endregion
 
             if (useSpeed3)
@@ -241,6 +253,7 @@ namespace FactorioPumpjackBlueprint
             int pipeCount = bp.Entities.Count(e => e.Name.Contains("pipe"));
 
             #region Place beacons
+            Profiler.StartSection("beacons");
             if (minPumpjacksPerBeacon > 0)
             {
                 const int BEACON_RANGE_RADIUS = 5; // from beacon center to pumpjack center
@@ -313,10 +326,12 @@ namespace FactorioPumpjackBlueprint
                     }
                 }
             }
+            Profiler.EndSection();
             #endregion
 
             #region Place medium electric poles
             {
+                Profiler.StartSection("power1");
                 var unpoweredEntityMap = bp.Entities.Where(e => e.Name.Equals("pumpjack") || e.Name.Equals("beacon")).ToDictionary(e => new Coord(e.Position));
                 var powerPoles = new List<Entity>();
                 while (unpoweredEntityMap.Count > 0)
@@ -371,6 +386,8 @@ namespace FactorioPumpjackBlueprint
                         unpoweredEntityMap.Remove(c);
                     }
                 }
+                Profiler.EndSection();
+                Profiler.StartSection("powerMST");
                 var allPoleIds = powerPoles.Select(p => p.EntityNumber).ToList();
                 allEdges = new List<Edge>();
                 mstEdges = new HashSet<Edge>();
@@ -399,6 +416,8 @@ namespace FactorioPumpjackBlueprint
                     mstIds.Add(edge.End);
                     mstEdges.Add(edge);
                 }
+                Profiler.EndSection();
+                Profiler.StartSection("powerAStar");
                 var idToPoleMap = powerPoles.ToDictionary(p => p.EntityNumber);
                 var newPoleSet = new HashSet<Coord>();
                 AStar astar = new AStar(occupant, 9);
@@ -424,6 +443,7 @@ namespace FactorioPumpjackBlueprint
                 {
                     bp.Entities.Add(new Entity("medium-electric-pole", pole.X, pole.Y));
                 }
+                Profiler.EndSection();
             }
             #endregion
 
@@ -594,6 +614,8 @@ namespace FactorioPumpjackBlueprint
                     iterationsWithoutImprovement = 0;
                 }
             }
+
+            Profiler.PrintTimeUsedPercent();
             
             Clipboard.SetText(bestFinishedBp.ExportBlueprintString());
         }
