@@ -29,10 +29,11 @@ namespace FactorioPumpjackBlueprint
         public static void PrintTimeUsedPercent()
         {
             double sum = (double)timeUsed.Values.Sum();
-            foreach (var sectionName in timeUsed.Keys)
+            int maxSectionNameLength = timeUsed.Keys.Select(n => n.Length).Max();
+            foreach (var pair in timeUsed.OrderByDescending(p => p.Value))
             {
-                double p = Math.Round(timeUsed[sectionName] / sum * 10000) / 100;
-                Console.WriteLine("Section " + sectionName + " took " + p + "% of time in the measured sections.");
+                double p = Math.Round(pair.Value / sum * 10000) / 100;
+                Console.WriteLine("Section {0," + maxSectionNameLength + "} took {1,5}% of time in the measured sections.", pair.Key, p);
             }
         }
     }
