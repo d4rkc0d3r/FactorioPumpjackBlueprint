@@ -122,17 +122,18 @@ namespace FactorioPumpjackBlueprint
                     int smallest = int.MaxValue;
                     foreach (var offset in directNeighborOffsets)
                     {
-                        Coord t = c.Add(offset);
-                        if (t.X < 0 || t.Y < 0 || t.X >= width || t.Y >= height)
+                        int x2 = c.X + offset.X;
+                        int y2 = c.Y + offset.Y;
+                        if (x2 < 0 || y2 < 0 || x2 >= width || y2 >= height)
                             continue;
-                        int d = distanceField[t.X, t.Y];
+                        int d = distanceField[x2, y2];
                         if (d != -1)
                         {
                             smallest = Math.Min(smallest, d);
                         }
                         else
                         {
-                            openQueue.Enqueue(t);
+                            openQueue.Enqueue(new Coord(x2, y2));
                         }
                     }
                     distanceField[c.X, c.Y] = (smallest == int.MaxValue) ? 0 : smallest + 1;
