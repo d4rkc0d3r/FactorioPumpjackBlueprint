@@ -96,12 +96,6 @@ namespace FactorioPumpjackBlueprint
             Profiler.StartSection("distanceMap");
             IList<Entity> pipes = bp.Entities.Where(e => string.Equals(e.Name, "pipe")).ToList();
             IDictionary<int, int[,]> distanceMap = new Dictionary<int, int[,]>();
-            var directNeighborOffsets = new Coord[] {
-                new Coord(-1,0),
-                new Coord(0,-1),
-                new Coord(1,0),
-                new Coord(0,1)
-            };
             foreach (Entity pipe in pipes)
             {
                 int[,] distanceField = new int[width, height];
@@ -123,12 +117,55 @@ namespace FactorioPumpjackBlueprint
                     if (x < 0 || y < 0 || x >= width || y >= height || occupant[x, y] != null || distanceField[x, y] != -1)
                         continue;
                     int smallest = int.MaxValue;
-                    foreach (var offset in directNeighborOffsets)
+                    int x2 = x - 1;
+                    int y2 = y;
+                    if (x2 >= 0 && y2 >= 0 && x2 < width && y2 < height)
                     {
-                        int x2 = x + offset.X;
-                        int y2 = y + offset.Y;
-                        if (x2 < 0 || y2 < 0 || x2 >= width || y2 >= height)
-                            continue;
+                        int d = distanceField[x2, y2];
+                        if (d != -1)
+                        {
+                            smallest = Math.Min(smallest, d);
+                        }
+                        else
+                        {
+                            openQueueX.Enqueue(x2);
+                            openQueueY.Enqueue(y2);
+                        }
+                    }
+                    x2 = x;
+                    y2 = y - 1;
+                    if (x2 >= 0 && y2 >= 0 && x2 < width && y2 < height)
+                    {
+                        int d = distanceField[x2, y2];
+                        if (d != -1)
+                        {
+                            smallest = Math.Min(smallest, d);
+                        }
+                        else
+                        {
+                            openQueueX.Enqueue(x2);
+                            openQueueY.Enqueue(y2);
+                        }
+                    }
+                    x2 = x + 1;
+                    y2 = y;
+                    if (x2 >= 0 && y2 >= 0 && x2 < width && y2 < height)
+                    {
+                        int d = distanceField[x2, y2];
+                        if (d != -1)
+                        {
+                            smallest = Math.Min(smallest, d);
+                        }
+                        else
+                        {
+                            openQueueX.Enqueue(x2);
+                            openQueueY.Enqueue(y2);
+                        }
+                    }
+                    x2 = x;
+                    y2 = y + 1;
+                    if (x2 >= 0 && y2 >= 0 && x2 < width && y2 < height)
+                    {
                         int d = distanceField[x2, y2];
                         if (d != -1)
                         {
