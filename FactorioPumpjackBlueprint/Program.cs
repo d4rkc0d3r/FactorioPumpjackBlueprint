@@ -218,6 +218,12 @@ namespace FactorioPumpjackBlueprint
                 mstIds.Add(edge.End);
                 mstEdges.Add(edge);
             }
+            var directNeighborOffsets = new Coord[] {
+                new Coord(-1,0),
+                new Coord(0,-1),
+                new Coord(1,0),
+                new Coord(0,1)
+            };
             var idToPipeMap = pipes.ToDictionary(p => p.EntityNumber);
             foreach (var mstEdge in mstEdges)
             {
