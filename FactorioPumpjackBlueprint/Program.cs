@@ -289,7 +289,7 @@ namespace FactorioPumpjackBlueprint
                                 int x = x1 + x2;
                                 int y = y1 + y2;
                                 if (x >= 0 && y >= 0 && x < width && y < height)
-                                    affectedPumpjacks[x1, y1] += pumpjackGrid[x1 + x2, y1 + y2];
+                                    affectedPumpjacks[x1, y1] += pumpjackGrid[x, y];
                             }
                         }
                         if (affectedPumpjacks[x1, y1] > maxAffectedPumpjacks)
