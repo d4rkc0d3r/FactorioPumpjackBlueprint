@@ -28,6 +28,28 @@ namespace FactorioPumpjackBlueprint
 
         public dynamic extraData;
 
+        private int nextEntityId = 1;
+
+        public Entity CreateEntity(string name, double x, double y, int direction = 0)
+        {
+            var entity = new Entity(name, x, y, direction);
+            AddEntity(entity);
+            return entity;
+        }
+
+        public void AddEntity(Entity entity)
+        {
+            entity.EntityNumber = nextEntityId++;
+            if (Entities == null)
+                Entities = new List<Entity>();
+            Entities.Add(entity);
+        }
+
+        public Blueprint Copy()
+        {
+            return ImportBlueprintString(ExportBlueprintString());
+        }
+
         public void NormalizePositions()
         {
             double minx = Entities.Select(e => e.Position.X).Min();
@@ -67,7 +89,10 @@ namespace FactorioPumpjackBlueprint
                 return null;
             }
             blueprintJSON = blueprintJSON.Substring(13, blueprintJSON.Length - 14);
-            return JsonConvert.DeserializeObject<Blueprint>(blueprintJSON);
+            Blueprint bp = JsonConvert.DeserializeObject<Blueprint>(blueprintJSON);
+            if (bp.Entities != null)
+                bp.nextEntityId = bp.Entities.Select(e => e.EntityNumber).Max() + 1;
+            return bp;
         }
 
         public string ExportBlueprintString()

@@ -9,10 +9,8 @@ namespace FactorioPumpjackBlueprint
 {
     class Entity
     {
-        private int entityNumber;
-
         [JsonProperty("entity_number")]
-        public int EntityNumber { get {return entityNumber;} set{entityNumber = value; MaxEntityNumber = Math.Max(MaxEntityNumber, entityNumber);} }
+        public int EntityNumber { get; set; }
 
         [JsonProperty("name")]
         public string Name { get; set; }
@@ -26,6 +24,13 @@ namespace FactorioPumpjackBlueprint
         [JsonProperty("items")]
         public IList<Item> Items { get; set; }
 
+        public void AddItem(string name, int count = 1)
+        {
+            if (Items == null)
+                Items = new List<Item>();
+            Items.Add(new Item() { Name = name, Count = count });
+        }
+
         public Entity()
         {
 
@@ -33,14 +38,12 @@ namespace FactorioPumpjackBlueprint
 
         public Entity(string name)
         {
-            EntityNumber = MaxEntityNumber + 1;
             Position = new Position(0, 0);
             Name = name;
         }
 
         public Entity(string name, double x, double y, int direction = 0)
         {
-            EntityNumber = MaxEntityNumber + 1;
             Position = new Position(x, y);
             Name = name;
             Direction = direction;
@@ -48,12 +51,9 @@ namespace FactorioPumpjackBlueprint
 
         public Entity(string name, Position p, int direction = 0)
         {
-            EntityNumber = MaxEntityNumber + 1;
             Position = new Position(p);
             Name = name;
             Direction = direction;
         }
-
-        public static int MaxEntityNumber = 0;
     }
 }

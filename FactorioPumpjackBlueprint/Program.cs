@@ -13,9 +13,8 @@ namespace FactorioPumpjackBlueprint
     {
         static Blueprint LayPipes(Blueprint bp, bool useSpeed3, int minPumpjacksPerBeacon)
         {
-            // Yes, this is a lazy copy
-            Profiler.StartSection("lazyCopy");
-            bp = Blueprint.ImportBlueprintString(bp.ExportBlueprintString());
+            Profiler.StartSection("copyBP");
+            bp = bp.Copy();
             Profiler.EndSection();
 
             Profiler.StartSection("initializeLayPipes");
@@ -86,7 +85,7 @@ namespace FactorioPumpjackBlueprint
             }
             foreach (var e in toAdd)
             {
-                bp.Entities.Add(e);
+                bp.AddEntity(e);
             }
             toAdd.Clear();
             Profiler.EndSection();
@@ -276,11 +275,11 @@ namespace FactorioPumpjackBlueprint
 
             foreach (var ugPipe in ugPipes)
             {
-                bp.Entities.Add(ugPipe);
+                bp.AddEntity(ugPipe);
             }
             foreach (var p in newPipeSet)
             {
-                bp.Entities.Add(new Entity("pipe", p.X, p.Y));
+                bp.CreateEntity("pipe", p.X, p.Y);
             }
             foreach (var entity in bp.Entities)
             {
@@ -351,9 +350,8 @@ namespace FactorioPumpjackBlueprint
                         {
                             if (affectedPumpjacks[x, y] >= i)
                             {
-                                bp.Entities.Add(new Entity("beacon", new Position(x, y)) {
-                                    Items = new List<Item>() { new Item() { Name = "speed-module-3", Count = 2} }
-                                });
+                                var beacon = bp.CreateEntity("beacon", x, y);
+                                beacon.AddItem("speed-module-3", 2);
                                 oilFlow += affectedPumpjacks[x, y] / 2.0;
                                 for (int y2 = -2; y2 <= 2; y2++)
                                 {
@@ -366,7 +364,7 @@ namespace FactorioPumpjackBlueprint
                                 }
                                 foreach (var o in beaconBBOffsets)
                                 {
-                                    occupant[x + o.X, y + o.Y] = bp.Entities[bp.Entities.Count - 1];
+                                    occupant[x + o.X, y + o.Y] = beacon;
                                 }
                                 x += 2;
                             }
@@ -467,8 +465,7 @@ namespace FactorioPumpjackBlueprint
                 {
                     break;
                 }
-                Entity powerPole = new Entity("medium-electric-pole", bestPosition.X, bestPosition.Y);
-                bp.Entities.Add(powerPole);
+                Entity powerPole = bp.CreateEntity("medium-electric-pole", bestPosition.X, bestPosition.Y);
                 powerPoles.Add(powerPole);
                 occupant[bestPosition.X, bestPosition.Y] = powerPole;
                 foreach (Coord c in bestPoweredEntities)
@@ -670,7 +667,7 @@ namespace FactorioPumpjackBlueprint
             }
 
             int iterationsWithoutImprovement = 0;
-            Blueprint bestBp = Blueprint.ImportBlueprintString(originalBp.ExportBlueprintString());
+            Blueprint bestBp = originalBp.Copy();
             Blueprint bestFinishedBp = LayPipes(originalBp, useSpeed3, minPumpjacksPerBeacon);
             double bestFitness = bestFinishedBp.extraData.Fitness;
             Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes and " +
@@ -679,7 +676,9 @@ namespace FactorioPumpjackBlueprint
 
             while (++iterationsWithoutImprovement <= maxIterationsWithoutImprovement)
             {
-                Blueprint bp = Blueprint.ImportBlueprintString(bestBp.ExportBlueprintString());
+                Profiler.StartSection("copyBP");
+                Blueprint bp = bestBp.Copy();
+                Profiler.EndSection();
                 var pumpjackIdMap = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).ToDictionary(e => e.EntityNumber);
                 var pumpjackIds = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).Select(p => p.EntityNumber).ToList();
                 int randomizeAmount = rng.Next(5);
