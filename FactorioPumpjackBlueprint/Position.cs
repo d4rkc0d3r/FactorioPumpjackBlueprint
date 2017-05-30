@@ -55,6 +55,11 @@ namespace FactorioPumpjackBlueprint
             return Math.Sqrt(Math.Pow(X - p.X, 2) + Math.Pow(Y - p.Y, 2));
         }
 
+        public Position DeepCopy()
+        {
+            return new Position(X, Y);
+        }
+
         public Position()
         {
 

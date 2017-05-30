@@ -14,7 +14,7 @@ namespace FactorioPumpjackBlueprint
         static Blueprint LayPipes(Blueprint bp, bool useSpeed3, int minPumpjacksPerBeacon)
         {
             Profiler.StartSection("copyBP");
-            bp = bp.Copy();
+            bp = bp.DeepCopy();
             Profiler.EndSection();
 
             Profiler.StartSection("initializeLayPipes");
@@ -667,7 +667,7 @@ namespace FactorioPumpjackBlueprint
             }
 
             int iterationsWithoutImprovement = 0;
-            Blueprint bestBp = originalBp.Copy();
+            Blueprint bestBp = originalBp.DeepCopy();
             Blueprint bestFinishedBp = LayPipes(originalBp, useSpeed3, minPumpjacksPerBeacon);
             double bestFitness = bestFinishedBp.extraData.Fitness;
             Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes and " +
@@ -677,7 +677,7 @@ namespace FactorioPumpjackBlueprint
             while (++iterationsWithoutImprovement <= maxIterationsWithoutImprovement)
             {
                 Profiler.StartSection("copyBP");
-                Blueprint bp = bestBp.Copy();
+                Blueprint bp = bestBp.DeepCopy();
                 Profiler.EndSection();
                 var pumpjackIdMap = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).ToDictionary(e => e.EntityNumber);
                 var pumpjackIds = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).Select(p => p.EntityNumber).ToList();

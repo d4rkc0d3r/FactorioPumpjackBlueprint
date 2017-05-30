@@ -45,9 +45,30 @@ namespace FactorioPumpjackBlueprint
             Entities.Add(entity);
         }
 
-        public Blueprint Copy()
+        public Blueprint DeepCopy()
         {
-            return ImportBlueprintString(ExportBlueprintString());
+            var bp = new Blueprint();
+            if (Icons != null)
+            {
+                bp.Icons = new List<Icon>();
+                foreach (var icon in Icons)
+                {
+                    bp.Icons.Add(icon.DeepCopy());
+                }
+            }
+            if (Entities != null)
+            {
+                bp.Entities = new List<Entity>();
+                foreach (var entity in Entities)
+                {
+                    bp.Entities.Add(entity.DeepCopy());
+                }
+            }
+            bp.Version = Version;
+            bp.nextEntityId = nextEntityId;
+            bp.Name = Name;
+            bp.Version = Version;
+            return bp;
         }
 
         public void NormalizePositions()

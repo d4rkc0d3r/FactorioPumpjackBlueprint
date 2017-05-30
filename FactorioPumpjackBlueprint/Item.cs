@@ -14,5 +14,13 @@ namespace FactorioPumpjackBlueprint
 
         [JsonProperty("count")]
         public int Count { get; set; }
+
+        public Item DeepCopy()
+        {
+            var item = new Item();
+            item.Name = Name;
+            item.Count = Count;
+            return item;
+        }
     }
 }

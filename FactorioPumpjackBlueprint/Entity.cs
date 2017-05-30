@@ -36,6 +36,24 @@ namespace FactorioPumpjackBlueprint
 
         }
 
+        public Entity DeepCopy()
+        {
+            var e = new Entity();
+            e.Name = Name;
+            e.Position = Position.DeepCopy();
+            e.EntityNumber = EntityNumber;
+            e.Direction = Direction;
+            if (Items != null)
+            {
+                e.Items = new List<Item>();
+                foreach (var item in Items)
+                {
+                    e.Items.Add(item.DeepCopy());
+                }
+            }
+            return e;
+        }
+
         public Entity(string name)
         {
             Position = new Position(0, 0);

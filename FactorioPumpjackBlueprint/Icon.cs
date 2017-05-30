@@ -14,5 +14,10 @@ namespace FactorioPumpjackBlueprint
 
         [JsonProperty("index")]
         public int Index { get; set; }
+
+        public Icon DeepCopy()
+        {
+            return new Icon() { Signal = Signal.DeepCopy(), Index = Index};
+        }
     }
 }

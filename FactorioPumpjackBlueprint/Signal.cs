@@ -14,5 +14,10 @@ namespace FactorioPumpjackBlueprint
 
         [JsonProperty("name")]
         public string Name { get; set; }
+
+        public Signal DeepCopy()
+        {
+            return new Signal() { Type = Type, Name = Name};
+        }
     }
 }
