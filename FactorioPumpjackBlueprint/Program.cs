@@ -105,14 +105,13 @@ namespace FactorioPumpjackBlueprint
                         distanceField[x, y] = -1;
                     }
                 }
-                Queue<int> openQueueX = new Queue<int>();
-                Queue<int> openQueueY = new Queue<int>();
-                openQueueX.Enqueue((int)pipe.Position.X);
-                openQueueY.Enqueue((int)pipe.Position.Y);
-                while (openQueueX.Count > 0)
+                Queue<int> openQueue = new Queue<int>();
+                openQueue.Enqueue(((int)pipe.Position.X) | (((int)pipe.Position.Y) << 16));
+                while (openQueue.Count > 0)
                 {
-                    int x = openQueueX.Dequeue();
-                    int y = openQueueY.Dequeue();
+                    int x = openQueue.Dequeue();
+                    int y = x >> 16;
+                    x &= 0xFFFF;
                     if (x < 0 || y < 0 || x >= width || y >= height || occupant[x, y] != null || distanceField[x, y] != -1)
                         continue;
                     int smallest = int.MaxValue;
@@ -127,8 +126,7 @@ namespace FactorioPumpjackBlueprint
                         }
                         else
                         {
-                            openQueueX.Enqueue(x2);
-                            openQueueY.Enqueue(y2);
+                            openQueue.Enqueue(x2 | (y2 << 16));
                         }
                     }
                     x2 = x;
@@ -142,8 +140,7 @@ namespace FactorioPumpjackBlueprint
                         }
                         else
                         {
-                            openQueueX.Enqueue(x2);
-                            openQueueY.Enqueue(y2);
+                            openQueue.Enqueue(x2 | (y2 << 16));
                         }
                     }
                     x2 = x + 1;
@@ -157,8 +154,7 @@ namespace FactorioPumpjackBlueprint
                         }
                         else
                         {
-                            openQueueX.Enqueue(x2);
-                            openQueueY.Enqueue(y2);
+                            openQueue.Enqueue(x2 | (y2 << 16));
                         }
                     }
                     x2 = x;
@@ -172,8 +168,7 @@ namespace FactorioPumpjackBlueprint
                         }
                         else
                         {
-                            openQueueX.Enqueue(x2);
-                            openQueueY.Enqueue(y2);
+                            openQueue.Enqueue(x2 | (y2 << 16));
                         }
                     }
                     distanceField[x, y] = (smallest == int.MaxValue) ? 0 : smallest + 1;
