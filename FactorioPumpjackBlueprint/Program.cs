@@ -623,7 +623,9 @@ namespace FactorioPumpjackBlueprint
         [STAThreadAttribute]
         static void Main(string[] args)
         {
+            Profiler.StartSection("importBlueprint");
             Blueprint originalBp = Blueprint.ImportBlueprintString(Clipboard.GetText());
+            Profiler.EndSection();
 
             if (originalBp == null)
             {
@@ -662,7 +664,9 @@ namespace FactorioPumpjackBlueprint
             }
 
             int iterationsWithoutImprovement = 0;
+            Profiler.StartSection("copyBP");
             Blueprint bestBp = originalBp.DeepCopy();
+            Profiler.EndSection();
             Blueprint bestFinishedBp = LayPipes(originalBp, useSpeed3, minPumpjacksPerBeacon);
             double bestFitness = bestFinishedBp.extraData.Fitness;
             Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes and " +
@@ -674,6 +678,7 @@ namespace FactorioPumpjackBlueprint
                 Profiler.StartSection("copyBP");
                 Blueprint bp = bestBp.DeepCopy();
                 Profiler.EndSection();
+                Profiler.StartSection("randomizeRotation");
                 var pumpjackIdMap = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).ToDictionary(e => e.EntityNumber);
                 var pumpjackIds = bp.Entities.Where(e => "pumpjack".Equals(e.Name)).Select(p => p.EntityNumber).ToList();
                 int randomizeAmount = rng.Next(5);
@@ -683,6 +688,7 @@ namespace FactorioPumpjackBlueprint
                     int direction = rng.Next(4) * 2;
                     pumpjackIdMap[pumpjackIds[id]].Direction = direction;
                 }
+                Profiler.EndSection();
                 var test = LayPipes(bp, useSpeed3, minPumpjacksPerBeacon);
                 double testFitness = test.extraData.Fitness;
 
