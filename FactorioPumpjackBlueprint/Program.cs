@@ -473,61 +473,64 @@ namespace FactorioPumpjackBlueprint
                 }
             }
             Profiler.EndSection();
-            Profiler.StartSection("powerMST");
-            var allPoleIds = powerPoles.Select(p => p.EntityNumber).ToList();
-            var allEdges = new List<Edge>();
-            var mstEdges = new HashSet<Edge>();
-            var mstIds = new HashSet<int>();
-            for (int i = 0; i < powerPoles.Count; i++)
+            if (powerPoles.Count > 1)
             {
-                var p1 = powerPoles[i];
-                for (int j = 0; j < powerPoles.Count; j++)
+                Profiler.StartSection("powerMST");
+                var allPoleIds = powerPoles.Select(p => p.EntityNumber).ToList();
+                var allEdges = new List<Edge>();
+                var mstEdges = new HashSet<Edge>();
+                var mstIds = new HashSet<int>();
+                for (int i = 0; i < powerPoles.Count; i++)
                 {
-                    if (i == j)
-                        continue;
-                    var p2 = powerPoles[j];
-                    var distance = p1.Position.DistanceTo(p2.Position);
-                    allEdges.Add(new Edge() { Start = p1.EntityNumber, End = powerPoles[j].EntityNumber, Distance = distance });
+                    var p1 = powerPoles[i];
+                    for (int j = 0; j < powerPoles.Count; j++)
+                    {
+                        if (i == j)
+                            continue;
+                        var p2 = powerPoles[j];
+                        var distance = p1.Position.DistanceTo(p2.Position);
+                        allEdges.Add(new Edge() { Start = p1.EntityNumber, End = powerPoles[j].EntityNumber, Distance = distance });
+                    }
                 }
-            }
-            allEdges = allEdges.OrderBy(e => e.Distance).ToList();
-            var edge = allEdges.First();
-            mstIds.Add(edge.Start);
-            mstIds.Add(edge.End);
-            mstEdges.Add(edge);
-            while (mstIds.Count < allPoleIds.Count)
-            {
-                edge = allEdges.First(e => (!mstIds.Contains(e.Start) && mstIds.Contains(e.End)) || (mstIds.Contains(e.Start) && !mstIds.Contains(e.End)));
+                allEdges = allEdges.OrderBy(e => e.Distance).ToList();
+                var edge = allEdges.First();
                 mstIds.Add(edge.Start);
                 mstIds.Add(edge.End);
                 mstEdges.Add(edge);
-            }
-            Profiler.EndSection();
-            Profiler.StartSection("powerAStar");
-            var idToPoleMap = powerPoles.ToDictionary(p => p.EntityNumber);
-            var newPoleSet = new HashSet<Coord>();
-            AStar astar = new AStar(occupant, 9);
-            foreach (var mstEdge in mstEdges)
-            {
-                if (mstEdge.Distance <= 9)
-                    continue;
-                Entity pole1 = idToPoleMap[mstEdge.Start];
-                Entity pole2 = idToPoleMap[mstEdge.End];
-                Coord start = new Coord(pole1.Position);
-                Coord end = new Coord(pole2.Position);
-                IEnumerable<Coord> e = astar.FindPath(start, end);
-                foreach (Coord c in e)
+                while (mstIds.Count < allPoleIds.Count)
                 {
-                    newPoleSet.Add(c);
+                    edge = allEdges.First(e => (!mstIds.Contains(e.Start) && mstIds.Contains(e.End)) || (mstIds.Contains(e.Start) && !mstIds.Contains(e.End)));
+                    mstIds.Add(edge.Start);
+                    mstIds.Add(edge.End);
+                    mstEdges.Add(edge);
                 }
-            }
-            foreach (var pole in powerPoles)
-            {
-                newPoleSet.Remove(new Coord(pole.Position));
-            }
-            foreach (var pole in newPoleSet)
-            {
-                bp.Entities.Add(new Entity("medium-electric-pole", pole.X, pole.Y));
+                Profiler.EndSection();
+                Profiler.StartSection("powerAStar");
+                var idToPoleMap = powerPoles.ToDictionary(p => p.EntityNumber);
+                var newPoleSet = new HashSet<Coord>();
+                AStar astar = new AStar(occupant, 9);
+                foreach (var mstEdge in mstEdges)
+                {
+                    if (mstEdge.Distance <= 9)
+                        continue;
+                    Entity pole1 = idToPoleMap[mstEdge.Start];
+                    Entity pole2 = idToPoleMap[mstEdge.End];
+                    Coord start = new Coord(pole1.Position);
+                    Coord end = new Coord(pole2.Position);
+                    IEnumerable<Coord> e = astar.FindPath(start, end);
+                    foreach (Coord c in e)
+                    {
+                        newPoleSet.Add(c);
+                    }
+                }
+                foreach (var pole in powerPoles)
+                {
+                    newPoleSet.Remove(new Coord(pole.Position));
+                }
+                foreach (var pole in newPoleSet)
+                {
+                    bp.Entities.Add(new Entity("medium-electric-pole", pole.X, pole.Y));
+                }
             }
             bp.NormalizePositions();
             Profiler.EndSection();
@@ -700,7 +703,7 @@ namespace FactorioPumpjackBlueprint
             Blueprint bestFinishedBp = LayPipes(originalBp, useSpeed3, minPumpjacksPerBeacon);
             double bestFitness = bestFinishedBp.extraData.Fitness;
             Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes and " +
-                bestFinishedBp.extraData.OilProduction + " oil flow after " + iterationsWithoutImprovement + " iterations.");
+                bestFinishedBp.extraData.OilProduction + " oil flow.");
             Random rng = new Random();
 
             while (++iterationsWithoutImprovement <= maxIterationsWithoutImprovement)
