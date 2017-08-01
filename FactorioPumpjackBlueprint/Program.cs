@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using FactorioPumpjackBlueprint.Pathfinding;
+using Newtonsoft.Json;
+using Ionic.Zlib;
+using System.IO;
 
 namespace FactorioPumpjackBlueprint
 {
@@ -623,16 +626,6 @@ namespace FactorioPumpjackBlueprint
         [STAThreadAttribute]
         static void Main(string[] args)
         {
-            Profiler.StartSection("importBlueprint");
-            Blueprint originalBp = Blueprint.ImportBlueprintString(Clipboard.GetText());
-            Profiler.EndSection();
-
-            if (originalBp == null)
-            {
-                Console.WriteLine("Could not load blueprint");
-                return;
-            }
-
             bool useSpeed3 = false;
             int minPumpjacksPerBeacon = 0;
             int maxIterationsWithoutImprovement = 100;
@@ -657,10 +650,46 @@ namespace FactorioPumpjackBlueprint
                 {
                     showTimeUsedPercent = true;
                 }
+                else if (Regex.IsMatch(arg, "-json"))
+                {
+                    string blueprintJSON = null;
+                    try
+                    {
+                        using (var msi = new MemoryStream(Convert.FromBase64String(Clipboard.GetText().Substring(1))))
+                        {
+                            using (var mso = new MemoryStream())
+                            {
+                                using (var gs = new ZlibStream(msi, CompressionMode.Decompress))
+                                {
+                                    gs.CopyTo(mso);
+                                }
+                                blueprintJSON = Encoding.UTF8.GetString(mso.ToArray());
+                            }
+                        }
+                    }
+                    catch (FormatException)
+                    {
+                        return;
+                    }
+                    blueprintJSON = blueprintJSON.Substring(13, blueprintJSON.Length - 14);
+                    string s = JsonConvert.SerializeObject(JsonConvert.DeserializeObject(blueprintJSON), Formatting.Indented);
+                    Console.WriteLine(s);
+                    return;
+                }
                 else
                 {
                     Console.WriteLine("Unknown option: " + arg);
                 }
+            }
+
+            Profiler.StartSection("importBlueprint");
+            Blueprint originalBp = Blueprint.ImportBlueprintString(Clipboard.GetText());
+            Profiler.EndSection();
+
+            if (originalBp == null)
+            {
+                Console.WriteLine("Could not load blueprint");
+                return;
             }
 
             int iterationsWithoutImprovement = 0;
