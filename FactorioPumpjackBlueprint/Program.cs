@@ -290,7 +290,8 @@ namespace FactorioPumpjackBlueprint
             {
                 foreach (var pumpjack in bp.Entities.Where(e => e.Name.Equals("pumpjack")))
                 {
-                    pumpjack.Items = new List<Item>() { new Item() { Name = "speed-module-3", Count = 2 } };
+                    pumpjack.Items = null;
+                    pumpjack.AddItem("speed-module-3", 2);
                 }
             }
 

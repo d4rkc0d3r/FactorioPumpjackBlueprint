@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace FactorioPumpjackBlueprint
 {
@@ -22,13 +23,13 @@ namespace FactorioPumpjackBlueprint
         public int Direction { get; set; }
 
         [JsonProperty("items")]
-        public IList<Item> Items { get; set; }
+        public JObject Items { get; set; }
 
         public void AddItem(string name, int count = 1)
         {
             if (Items == null)
-                Items = new List<Item>();
-            Items.Add(new Item() { Name = name, Count = count });
+                Items = new JObject();
+            Items[name] = count;
         }
 
         public Entity()
@@ -45,11 +46,7 @@ namespace FactorioPumpjackBlueprint
             e.Direction = Direction;
             if (Items != null)
             {
-                e.Items = new List<Item>();
-                foreach (var item in Items)
-                {
-                    e.Items.Add(item.DeepCopy());
-                }
+                e.Items = (JObject)Items.DeepClone();
             }
             return e;
         }
