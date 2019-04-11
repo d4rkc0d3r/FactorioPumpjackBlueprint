@@ -95,6 +95,7 @@
     <Compile Include="Profiler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RingQueue.cs" />
     <Compile Include="Signal.cs" />
   </ItemGroup>
   <ItemGroup>

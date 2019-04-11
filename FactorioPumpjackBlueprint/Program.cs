@@ -98,7 +98,7 @@ namespace FactorioPumpjackBlueprint
             Profiler.StartSection("distanceMap");
             IList<Entity> pipes = bp.Entities.Where(e => string.Equals(e.Name, "pipe")).ToList();
             IDictionary<int, int[,]> distanceMap = new Dictionary<int, int[,]>();
-            Queue<int> openQueue = new Queue<int>();
+            var openQueue = new RingQueue(Math.Max(width, height) * 5);
             foreach (Entity pipe in pipes)
             {
                 int[,] distanceField = new int[width, height];
@@ -642,6 +642,7 @@ namespace FactorioPumpjackBlueprint
             int minPumpjacksPerBeacon = 0;
             int maxIterationsWithoutImprovement = 100;
             bool showTimeUsedPercent = false;
+            Random rng = new Random();
 
             foreach (string arg in args.Select(s => s.ToLowerInvariant()))
             {
@@ -657,6 +658,10 @@ namespace FactorioPumpjackBlueprint
                 else if (Regex.IsMatch(arg, "-i=\\d+"))
                 {
                     maxIterationsWithoutImprovement = int.Parse(arg.Substring(3));
+                }
+                else if (Regex.IsMatch(arg, "-seed=\\d+"))
+                {
+                    rng = new Random(int.Parse(arg.Substring(6)));
                 }
                 else if (Regex.IsMatch(arg, "-t(ime)?"))
                 {
@@ -712,7 +717,6 @@ namespace FactorioPumpjackBlueprint
             double bestFitness = bestFinishedBp.extraData.Fitness;
             Console.WriteLine("Found layout with " + bestFinishedBp.extraData.PipeCount + " pipes and " +
                 bestFinishedBp.extraData.OilProduction + " oil flow.");
-            Random rng = new Random();
 
             while (++iterationsWithoutImprovement <= maxIterationsWithoutImprovement)
             {
