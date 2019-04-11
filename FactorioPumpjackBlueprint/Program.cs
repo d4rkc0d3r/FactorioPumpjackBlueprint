@@ -98,29 +98,29 @@ namespace FactorioPumpjackBlueprint
             Profiler.StartSection("distanceMap");
             IList<Entity> pipes = bp.Entities.Where(e => string.Equals(e.Name, "pipe")).ToList();
             IDictionary<int, int[,]> distanceMap = new Dictionary<int, int[,]>();
+            Queue<int> openQueue = new Queue<int>();
             foreach (Entity pipe in pipes)
             {
                 int[,] distanceField = new int[width, height];
-                for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
                 {
-                    for (int y = 0; y < height; y++)
+                    for (int x = 0; x < width; x++)
                     {
                         distanceField[x, y] = -1;
                     }
                 }
-                Queue<int> openQueue = new Queue<int>();
                 openQueue.Enqueue(((int)pipe.Position.X) | (((int)pipe.Position.Y) << 16));
                 while (openQueue.Count > 0)
                 {
                     int x = openQueue.Dequeue();
                     int y = x >> 16;
                     x &= 0xFFFF;
-                    if (x < 0 || y < 0 || x >= width || y >= height || occupant[x, y] != null || distanceField[x, y] != -1)
+                    if (occupant[x, y] != null || distanceField[x, y] != -1)
                         continue;
                     int smallest = int.MaxValue;
-                    int x2 = x - 1;
-                    int y2 = y;
-                    if (x2 >= 0 && y2 >= 0 && x2 < width && y2 < height)
+                    int x2 = x;
+                    int y2 = y - 1;
+                    if (y2 >= 0)
                     {
                         int d = distanceField[x2, y2];
                         if (d != -1)
@@ -132,9 +132,9 @@ namespace FactorioPumpjackBlueprint
                             openQueue.Enqueue(x2 | (y2 << 16));
                         }
                     }
-                    x2 = x;
-                    y2 = y - 1;
-                    if (x2 >= 0 && y2 >= 0 && x2 < width && y2 < height)
+                    x2 = x - 1;
+                    y2 = y;
+                    if (x2 >= 0)
                     {
                         int d = distanceField[x2, y2];
                         if (d != -1)
@@ -148,7 +148,7 @@ namespace FactorioPumpjackBlueprint
                     }
                     x2 = x + 1;
                     y2 = y;
-                    if (x2 >= 0 && y2 >= 0 && x2 < width && y2 < height)
+                    if (x2 < width)
                     {
                         int d = distanceField[x2, y2];
                         if (d != -1)
@@ -162,7 +162,7 @@ namespace FactorioPumpjackBlueprint
                     }
                     x2 = x;
                     y2 = y + 1;
-                    if (x2 >= 0 && y2 >= 0 && x2 < width && y2 < height)
+                    if (y2 < height)
                     {
                         int d = distanceField[x2, y2];
                         if (d != -1)
@@ -208,9 +208,17 @@ namespace FactorioPumpjackBlueprint
             mstIds.Add(edge.Start);
             mstIds.Add(edge.End);
             mstEdges.Add(edge);
+
+            bool disconnected = false;
+
             while (mstIds.Count < allPipeIds.Count)
             {
-                edge = allEdges.First(e => (!mstIds.Contains(e.Start) && mstIds.Contains(e.End)) || (mstIds.Contains(e.Start) && !mstIds.Contains(e.End)));
+                edge = allEdges.FirstOrDefault(e => mstIds.Contains(e.Start) ^ mstIds.Contains(e.End));
+                if (edge == null)
+                {
+                    disconnected = true;
+                    break;
+                }
                 mstIds.Add(edge.Start);
                 mstIds.Add(edge.End);
                 mstEdges.Add(edge);
@@ -374,7 +382,7 @@ namespace FactorioPumpjackBlueprint
             Profiler.EndSection();
             #endregion
 
-            bp.extraData = new { PipeCount = pipeCount, Fitness = oilFlow * 100 - pipeCount, OilProduction = oilFlow };
+            bp.extraData = new { PipeCount = pipeCount, Fitness = (oilFlow * 100 - pipeCount) * ((disconnected) ? 0.5 : 1.0), OilProduction = oilFlow };
             bp.Name = bp.Entities.Count(e => e.Name.Equals("pumpjack")) + " pumpjack outpost | " + oilFlow + " oil flow";
             bp.NormalizePositions();
 
