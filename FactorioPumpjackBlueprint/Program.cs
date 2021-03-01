@@ -638,7 +638,7 @@ namespace FactorioPumpjackBlueprint
 
         static void PrintHelp()
         {
-            Console.WriteLine("FactorioPumpjackBlueprint.exe [-s3] [-b] [-i=\\d+] [-seed=\\d+] [-json]");
+            Console.WriteLine("PumpjackBP.exe   [-s3] [-b] [-i=\\d+] [-seed=\\d+] [-json]");
             Console.WriteLine("                 The blueprint string gets read from clipboard");
             Console.WriteLine("-s(peed)?3       Puts speed3 modules in the pumjacks");
             Console.WriteLine("-b(eacon)?(=\\d)? Places speed3 beacons and activates -s3, defaults to min 2 affacted pumpjacks per beacon");
