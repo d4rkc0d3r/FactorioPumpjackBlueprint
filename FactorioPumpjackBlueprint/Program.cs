@@ -515,29 +515,30 @@ namespace FactorioPumpjackBlueprint
                 Profiler.EndSection();
                 Profiler.StartSection("powerAStar");
                 var idToPoleMap = powerPoles.ToDictionary(p => p.EntityNumber);
-                var newPoleSet = new HashSet<Coord>();
                 AStar astar = new AStar(occupant, 9);
                 foreach (var mstEdge in mstEdges)
                 {
-                    if (mstEdge.Distance <= 9)
-                        continue;
                     Entity pole1 = idToPoleMap[mstEdge.Start];
                     Entity pole2 = idToPoleMap[mstEdge.End];
+                    if (mstEdge.Distance <= 9)
+                    {
+                        pole1.AddNeighbour(pole2);
+                        pole2.AddNeighbour(pole1);
+                        continue;
+                    }
                     Coord start = new Coord(pole1.Position);
                     Coord end = new Coord(pole2.Position);
-                    IEnumerable<Coord> e = astar.FindPath(start, end);
-                    foreach (Coord c in e)
+                    Entity lastPole = pole1;
+                    List<Coord> e = astar.FindPath(start, end).ToList();
+                    for(int i = 1; i < e.Count - 1; i++)
                     {
-                        newPoleSet.Add(c);
+                        Entity pole = bp.CreateEntity("medium-electric-pole", e[i].X, e[i].Y);
+                        lastPole.AddNeighbour(pole);
+                        pole.AddNeighbour(lastPole);
+                        lastPole = pole;
                     }
-                }
-                foreach (var pole in powerPoles)
-                {
-                    newPoleSet.Remove(new Coord(pole.Position));
-                }
-                foreach (var pole in newPoleSet)
-                {
-                    bp.Entities.Add(new Entity("medium-electric-pole", pole.X, pole.Y));
+                    lastPole.AddNeighbour(pole2);
+                    pole2.AddNeighbour(lastPole);
                 }
             }
             bp.NormalizePositions();

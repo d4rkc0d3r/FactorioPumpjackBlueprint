@@ -25,11 +25,26 @@ namespace FactorioPumpjackBlueprint
         [JsonProperty("items")]
         public JObject Items { get; set; }
 
+        [JsonProperty("neighbours")]
+        public IList<int> Neighbours { get; set; }
+
         public void AddItem(string name, int count = 1)
         {
             if (Items == null)
                 Items = new JObject();
             Items[name] = count;
+        }
+
+        public void AddNeighbour(int entityId)
+        {
+            if (Neighbours == null)
+                Neighbours = new List<int>();
+            Neighbours.Add(entityId);
+        }
+
+        public void AddNeighbour(Entity entity)
+        {
+            AddNeighbour(entity.EntityNumber);
         }
 
         public Entity()
@@ -44,6 +59,10 @@ namespace FactorioPumpjackBlueprint
             e.Position = Position.DeepCopy();
             e.EntityNumber = EntityNumber;
             e.Direction = Direction;
+            if(Neighbours != null)
+            {
+                e.Neighbours = new List<int>(Neighbours);
+            }
             if (Items != null)
             {
                 e.Items = (JObject)Items.DeepClone();
