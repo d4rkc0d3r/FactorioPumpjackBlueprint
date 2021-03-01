@@ -635,6 +635,17 @@ namespace FactorioPumpjackBlueprint
             return undergroundPipes;
         }
 
+        static void PrintHelp()
+        {
+            Console.WriteLine("FactorioPumpjackBlueprint.exe [-s3] [-b] [-i=\\d+] [-seed=\\d+] [-json]");
+            Console.WriteLine("            The blueprint string gets read from clipboard");
+            Console.WriteLine("-s(peed)?3  Puts speed3 modules in the pumjacks");
+            Console.WriteLine("-b(eacon)?  Places speed3 beacons and activates -s3");
+            Console.WriteLine("-i=\\d+      Specifies number of mutations for optimization, defaults to 100");
+            Console.WriteLine("-seed=\\d+   Specifies random number seed to get deterministic results");
+            Console.WriteLine("-json       Displays decoded blueprint json instead of running the pumpjack field code");
+        }
+
         [STAThreadAttribute]
         static void Main(string[] args)
         {
@@ -654,6 +665,11 @@ namespace FactorioPumpjackBlueprint
                 {
                     minPumpjacksPerBeacon = 2;
                     useSpeed3 = true;
+                }
+                else if (Regex.IsMatch(arg, "-(h(elp)?|\\?)"))
+                {
+                    PrintHelp();
+                    return;
                 }
                 else if (Regex.IsMatch(arg, "-i=\\d+"))
                 {
