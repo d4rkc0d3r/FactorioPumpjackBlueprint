@@ -662,8 +662,14 @@ namespace FactorioPumpjackBlueprint
                     useSpeed3 = true;
                 }
                 else if (Regex.IsMatch(arg, "-b(eacon)?"))
-                {
-                    minPumpjacksPerBeacon = 2;
+                {                    
+                    if (arg.Contains("="))
+                        minPumpjacksPerBeacon = int.Parse(arg.Substring(arg.IndexOf('=') + 1));
+                        if (minPumpjacksPerBeacon < 1)
+                            minPumpjacksPerBeacon = 1;
+                    else
+                        minPumpjacksPerBeacon = 2;
+                    useSpeed3 = true;
                     useSpeed3 = true;
                 }
                 else if (Regex.IsMatch(arg, "-(h(elp)?|\\?)"))
