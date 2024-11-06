@@ -18,6 +18,7 @@ namespace FactorioPumpjackBlueprint
         {
             Profiler.StartSection("copyBP");
             bp = bp.DeepCopy();
+            bp.Entities = bp.Entities.Where(e => e.Name.Equals("pumpjack")).ToList();
             Profiler.EndSection();
 
             Profiler.StartSection("initializeLayPipes");
@@ -73,7 +74,7 @@ namespace FactorioPumpjackBlueprint
                         case Direction.East: p.Add(2, -1); break;
                         case Direction.South: p.Add(-1, 2); break;
                         case Direction.West: p.Add(-2, 1); break;
-                        default: p = null; break;
+                        default: throw new Exception($"Invalid pumpjack direction {entity.Direction}, possible values are [0, 2, 6, 8]");
                     }
                     if (p == null || occupant[(int)p.X, (int)p.Y] == null)
                     {
@@ -638,13 +639,13 @@ namespace FactorioPumpjackBlueprint
 
         static void PrintHelp()
         {
-            Console.WriteLine("PumpjackBP.exe   [-s3] [-b] [-i=\\d+] [-seed=\\d+] [-json]");
-            Console.WriteLine("                 The blueprint string gets read from clipboard");
-            Console.WriteLine("-s(peed)?3       Puts speed3 modules in the pumjacks");
-            Console.WriteLine("-b(eacon)?(=\\d)? Places speed3 beacons and activates -s3, defaults to min 2 affacted pumpjacks per beacon");
-            Console.WriteLine("-i=\\d+           Specifies number of mutations for optimization, defaults to 100");
-            Console.WriteLine("-seed=\\d+        Specifies random number seed to get deterministic results");
-            Console.WriteLine("-json            Displays decoded blueprint json instead of running the pumpjack field code");
+            Console.WriteLine(@"PumpjackBP.exe   [-s3] [-b] [-i=\d+] [-seed=\d+] [-json]");
+            Console.WriteLine(@"                 The blueprint string gets read from clipboard");
+            Console.WriteLine(@"-s(peed)?3       Puts speed3 modules in the pumpjacks");
+            Console.WriteLine(@"-b(eacon)?(=\d)? Places speed3 beacons and activates -s3, defaults to min 2 affected pumpjacks per beacon");
+            Console.WriteLine(@"-i=\d+           Specifies number of mutations for optimization, defaults to 100");
+            Console.WriteLine(@"-seed=\d+        Specifies random number seed to get deterministic results");
+            Console.WriteLine(@"-json            Displays decoded blueprint json instead of running the pumpjack field code");
         }
 
         [STAThreadAttribute]
@@ -756,7 +757,7 @@ namespace FactorioPumpjackBlueprint
                 for (int i = 0; i <= randomizeAmount; i++)
                 {
                     int id = rng.Next(pumpjackIds.Count);
-                    int direction = rng.Next(4) * 2;
+                    int direction = rng.Next(4) * 4;
                     pumpjackIdMap[pumpjackIds[id]].Direction = direction;
                 }
                 Profiler.EndSection();
