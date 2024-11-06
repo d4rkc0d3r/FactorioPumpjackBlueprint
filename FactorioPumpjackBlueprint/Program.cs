@@ -304,7 +304,7 @@ namespace FactorioPumpjackBlueprint
                 foreach (var pumpjack in bp.Entities.Where(e => e.Name.Equals("pumpjack")))
                 {
                     pumpjack.Items = null;
-                    pumpjack.AddItem("speed-module-3", Entity.Quality.Common, 2, PumpjackModuleInventoryID);
+                    pumpjack.AddItem("speed-module-3", Quality.Common, 2, PumpjackModuleInventoryID);
                 }
             }
 
@@ -363,7 +363,7 @@ namespace FactorioPumpjackBlueprint
                             if (affectedPumpjacks[x, y] >= i)
                             {
                                 var beacon = bp.CreateEntity("beacon", x, y);
-                                beacon.AddItem("speed-module-3", Entity.Quality.Common, 2, BeaconModuleInventoryID);
+                                beacon.AddItem("speed-module-3", Quality.Common, 2, BeaconModuleInventoryID);
                                 oilFlow += affectedPumpjacks[x, y] / 2.0;
                                 for (int y2 = -2; y2 <= 2; y2++)
                                 {
@@ -394,7 +394,7 @@ namespace FactorioPumpjackBlueprint
             return bp;
         }
 
-        static void PlacePowerPoles(Blueprint bp)
+        static void PlacePowerPoles(Blueprint bp, string poleQuality)
         {
             Profiler.StartSection("initializePower");
             double minx = bp.Entities.Select(e => e.Position.X).Min();
@@ -434,9 +434,31 @@ namespace FactorioPumpjackBlueprint
             Profiler.StartSection("power1");
             var unpoweredEntityMap = bp.Entities.Where(e => e.Name.Equals("pumpjack") || e.Name.Equals("beacon")).ToDictionary(e => new Coord(e.Position));
             var powerPoles = new List<Entity>();
+            int POWER_POLE_SUPPLY_AREA = 7;
+            int POWER_POLE_WIRE_REACH = 9;
+            switch (poleQuality)
+            {
+                case Quality.Uncommon:
+                    POWER_POLE_SUPPLY_AREA = 9;
+                    POWER_POLE_WIRE_REACH = 11;
+                    break;
+                case Quality.Rare:
+                    POWER_POLE_SUPPLY_AREA = 11;
+                    POWER_POLE_WIRE_REACH = 13;
+                    break;
+                case Quality.Epic:
+                    POWER_POLE_SUPPLY_AREA = 13;
+                    POWER_POLE_WIRE_REACH = 15;
+                    break;
+                case Quality.Legendary:
+                    POWER_POLE_SUPPLY_AREA = 17;
+                    POWER_POLE_WIRE_REACH = 19;
+                    break;
+            }
+            // both beacons and pumpjacks have an area of 3x3 so we add 1 to the radius
+            int POWER_POLE_BUILDING_REACH_RADIUS = POWER_POLE_SUPPLY_AREA / 2 + 1;
             while (unpoweredEntityMap.Count > 0)
             {
-                const int POWER_POLE_REACH_RADIUS = 4;
                 double highestPowerCount = 0;
                 Position center = new Position(width / 2.0, height / 2.0);
                 double centerBiasDivider = 1 + Math.Sqrt(Math.Pow(center.X, 2) + Math.Pow(center.Y, 2));
@@ -452,9 +474,9 @@ namespace FactorioPumpjackBlueprint
                         }
                         IList<Coord> poweredEntities = new List<Coord>();
                         double sum = 0;
-                        for (int y2 = -POWER_POLE_REACH_RADIUS; y2 <= POWER_POLE_REACH_RADIUS; y2++)
+                        for (int y2 = -POWER_POLE_BUILDING_REACH_RADIUS; y2 <= POWER_POLE_BUILDING_REACH_RADIUS; y2++)
                         {
-                            for (int x2 = -POWER_POLE_REACH_RADIUS; x2 <= POWER_POLE_REACH_RADIUS; x2++)
+                            for (int x2 = -POWER_POLE_BUILDING_REACH_RADIUS; x2 <= POWER_POLE_BUILDING_REACH_RADIUS; x2++)
                             {
                                 Coord c = new Coord(x + x2, y + y2);
                                 if (unpoweredEntityMap.ContainsKey(c))
@@ -478,6 +500,7 @@ namespace FactorioPumpjackBlueprint
                     break;
                 }
                 Entity powerPole = bp.CreateEntity("medium-electric-pole", bestPosition.X, bestPosition.Y);
+                powerPole.Quality = poleQuality;
                 powerPoles.Add(powerPole);
                 occupant[bestPosition.X, bestPosition.Y] = powerPole;
                 foreach (Coord c in bestPoweredEntities)
@@ -520,12 +543,12 @@ namespace FactorioPumpjackBlueprint
                 Profiler.EndSection();
                 Profiler.StartSection("powerAStar");
                 var idToPoleMap = powerPoles.ToDictionary(p => p.EntityNumber);
-                AStar astar = new AStar(occupant, 9);
+                AStar astar = new AStar(occupant, POWER_POLE_WIRE_REACH);
                 foreach (var mstEdge in mstEdges)
                 {
                     Entity pole1 = idToPoleMap[mstEdge.Start];
                     Entity pole2 = idToPoleMap[mstEdge.End];
-                    if (mstEdge.Distance <= 9)
+                    if (mstEdge.Distance <= POWER_POLE_WIRE_REACH)
                     {
                         pole1.AddNeighbour(pole2);
                         pole2.AddNeighbour(pole1);
@@ -538,6 +561,7 @@ namespace FactorioPumpjackBlueprint
                     for(int i = 1; i < e.Count - 1; i++)
                     {
                         Entity pole = bp.CreateEntity("medium-electric-pole", e[i].X, e[i].Y);
+                        pole.Quality = poleQuality;
                         lastPole.AddNeighbour(pole);
                         pole.AddNeighbour(lastPole);
                         lastPole = pole;
@@ -647,6 +671,8 @@ namespace FactorioPumpjackBlueprint
             Console.WriteLine(@"                 The blueprint string gets read from clipboard");
             Console.WriteLine(@"-s(peed)?3       Puts speed3 modules in the pumpjacks");
             Console.WriteLine(@"-b(eacon)?(=\d)? Places speed3 beacons and activates -s3, defaults to min 2 affected pumpjacks per beacon");
+            Console.WriteLine(@"-p(ole)?(=common|uncommon|rare|epic|legendary)");
+            Console.WriteLine(@"                 Selects quality of the medium electric poles, defaults to common");
             Console.WriteLine(@"-i=\d+           Specifies number of mutations for optimization, defaults to 100");
             Console.WriteLine(@"-seed=\d+        Specifies random number seed to get deterministic results");
             Console.WriteLine(@"-json            Displays decoded blueprint json instead of running the pumpjack field code");
@@ -659,6 +685,7 @@ namespace FactorioPumpjackBlueprint
             int minPumpjacksPerBeacon = 0;
             int maxIterationsWithoutImprovement = 100;
             bool showTimeUsedPercent = false;
+            string poleQuality = Quality.Common;
             Random rng = new Random();
 
             foreach (string arg in args.Select(s => s.ToLowerInvariant()))
@@ -697,6 +724,13 @@ namespace FactorioPumpjackBlueprint
                 else if (Regex.IsMatch(arg, "-t(ime)?"))
                 {
                     showTimeUsedPercent = true;
+                }
+                else if (Regex.IsMatch(arg, "-(p(ole)?|med(ium)?)((-|=)(common|uncommon|rare|epic|legendary))?"))
+                {
+                    var match = Regex.Match(arg, "-(p(ole)?|med(ium)?)((-|=)(common|uncommon|rare|epic|legendary))?");
+                    poleQuality = match.Groups[6].Value;
+                    if (string.IsNullOrEmpty(poleQuality) || poleQuality == "common")
+                        poleQuality = Quality.Common;
                 }
                 else if (Regex.IsMatch(arg, "-json"))
                 {
@@ -779,7 +813,7 @@ namespace FactorioPumpjackBlueprint
                 }
             }
 
-            PlacePowerPoles(bestFinishedBp);
+            PlacePowerPoles(bestFinishedBp, poleQuality);
 
             if(showTimeUsedPercent)
                 Profiler.PrintTimeUsedPercent();

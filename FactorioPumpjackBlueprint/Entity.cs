@@ -8,22 +8,25 @@ using Newtonsoft.Json.Linq;
 
 namespace FactorioPumpjackBlueprint
 {
+    class Quality
+    {
+        public const string Common = null;
+        public const string Uncommon = "uncommon";
+        public const string Rare = "rare";
+        public const string Epic = "epic";
+        public const string Legendary = "legendary";
+    }
     class Entity
     {
-        public class Quality
-        {
-            public const string Common = null;
-            public const string Uncommon = "uncommon";
-            public const string Rare = "rare";
-            public const string Epic = "epic";
-            public const string Legendary = "legendary";
-        }
 
         [JsonProperty("entity_number")]
         public int EntityNumber { get; set; }
 
         [JsonProperty("name")]
         public string Name { get; set; }
+
+        [JsonProperty("quality")]
+        public string Quality { get; set; }
 
         [JsonProperty("position")]
         public Position Position { get; set; }
