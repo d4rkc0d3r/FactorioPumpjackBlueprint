@@ -14,11 +14,15 @@ namespace FactorioPumpjackBlueprint
 {
     class Program
     {
+        const int PumpjackModuleInventoryID = 2;
+        const int BeaconModuleInventoryID = 1;
+
         static Blueprint LayPipes(Blueprint bp, bool useSpeed3, int minPumpjacksPerBeacon)
         {
             Profiler.StartSection("copyBP");
             bp = bp.DeepCopy();
             bp.Entities = bp.Entities.Where(e => e.Name.Equals("pumpjack")).ToList();
+            bp.MinimizeNextEntityId();
             Profiler.EndSection();
 
             Profiler.StartSection("initializeLayPipes");
@@ -300,7 +304,7 @@ namespace FactorioPumpjackBlueprint
                 foreach (var pumpjack in bp.Entities.Where(e => e.Name.Equals("pumpjack")))
                 {
                     pumpjack.Items = null;
-                    pumpjack.AddItem("speed-module-3", 2);
+                    pumpjack.AddItem("speed-module-3", Entity.Quality.Common, 2, PumpjackModuleInventoryID);
                 }
             }
 
@@ -359,7 +363,7 @@ namespace FactorioPumpjackBlueprint
                             if (affectedPumpjacks[x, y] >= i)
                             {
                                 var beacon = bp.CreateEntity("beacon", x, y);
-                                beacon.AddItem("speed-module-3", 2);
+                                beacon.AddItem("speed-module-3", Entity.Quality.Common, 2, BeaconModuleInventoryID);
                                 oilFlow += affectedPumpjacks[x, y] / 2.0;
                                 for (int y2 = -2; y2 <= 2; y2++)
                                 {

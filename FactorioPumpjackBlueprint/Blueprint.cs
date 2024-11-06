@@ -71,6 +71,11 @@ namespace FactorioPumpjackBlueprint
             return bp;
         }
 
+        public void MinimizeNextEntityId()
+        {
+            nextEntityId = Entities.Max(e => e.EntityNumber) + 1;
+        }
+
         public void NormalizePositions()
         {
             double minx = Entities.Select(e => e.Position.X).Min();
