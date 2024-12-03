@@ -766,6 +766,13 @@ namespace FactorioPumpjackBlueprint
 
             Profiler.StartSection("importBlueprint");
             Blueprint originalBp = Blueprint.ImportBlueprintString(Clipboard.GetText());
+            int majorVersion = (int)(originalBp.Version / Math.Pow(2, 48));
+            if (majorVersion < 2)
+            {
+                Console.WriteLine("Blueprint created before factorio version 2.0");
+                Console.WriteLine("Either update factorio or downgrade this tool to version 1.2");
+                return;
+            }
             Profiler.EndSection();
 
             if (originalBp == null)
