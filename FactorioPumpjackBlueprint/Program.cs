@@ -78,14 +78,14 @@ namespace FactorioPumpjackBlueprint
                         case Direction.East: p.Add(2, -1); break;
                         case Direction.South: p.Add(-1, 2); break;
                         case Direction.West: p.Add(-2, 1); break;
-                        default: throw new Exception($"Invalid pumpjack direction {entity.Direction}, possible values are [0, 2, 6, 8]");
+                        default: throw new Exception($"Invalid pumpjack direction {entity.Direction}, possible values are [{Direction.North}, {Direction.East}, {Direction.South}, {Direction.West}]");
                     }
                     if (p == null || occupant[(int)p.X, (int)p.Y] == null)
                     {
                         break;
                     }
                     p = null;
-                    entity.Direction = (entity.Direction + 2) % 8;
+                    entity.Direction = (entity.Direction + Direction.TotalCount / 4) % Direction.TotalCount;
                 } while (++tries < 4);
                 if (p == null)
                     continue;
@@ -795,7 +795,7 @@ namespace FactorioPumpjackBlueprint
                 for (int i = 0; i <= randomizeAmount; i++)
                 {
                     int id = rng.Next(pumpjackIds.Count);
-                    int direction = rng.Next(4) * 4;
+                    int direction = rng.Next(4) * (Direction.TotalCount / 4);
                     pumpjackIdMap[pumpjackIds[id]].Direction = direction;
                 }
                 Profiler.EndSection();

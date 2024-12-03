@@ -12,5 +12,6 @@ namespace FactorioPumpjackBlueprint
         public const int East = 4;
         public const int South = 8;
         public const int West = 12;
+        public const int TotalCount = 16;
     }
 }
